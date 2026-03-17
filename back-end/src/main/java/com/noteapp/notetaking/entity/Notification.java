@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Type;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
@@ -18,33 +17,27 @@ import java.util.UUID;
 @Builder
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "notes")
-public class Note {
+@Table(name = "notifications")
+public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    private String title;
+    @Column(nullable = false)
+    private String type;
 
     @Type(JsonType.class)
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private String body;
+    @Column(columnDefinition = "jsonb")
+    private String payload;
 
-    @Column(name = "is_collaborative")
-    private boolean isCollaborative = false;
-
-    @Column(name = "yjs_doc")
-    private byte[] yjsDoc;
+    @Column(name = "is_read")
+    private boolean isRead = false;
 
     @CreatedDate
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }
