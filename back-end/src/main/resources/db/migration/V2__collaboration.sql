@@ -5,19 +5,20 @@ ALTER TABLE notes
 ADD COLUMN yjs_doc BYTEA;
 
 CREATE TABLE note_collaborators (
-    id BIGSERIAL PRIMARY KEY,
-    note_id BIGINT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     role VARCHAR(20) NOT NULL DEFAULT 'EDITOR',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(note_id, user_id)
 );
 
 CREATE TABLE note_invitations (
-    id BIGSERIAL PRIMARY KEY,
-    note_id BIGINT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    note_id UUID NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
     email VARCHAR(255) NOT NULL,
-    invited_by BIGINT REFERENCES users(id),
+    inviter_id UUID REFERENCES users(id),
+    invitee_id UUID REFERENCES users(id),
     token VARCHAR(255) UNIQUE NOT NULL,
     status VARCHAR(20) DEFAULT 'PENDING',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -25,8 +26,8 @@ CREATE TABLE note_invitations (
 );
 
 CREATE TABLE notifications (
-    id BIGSERIAL PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL,
     payload JSONB,
     is_read BOOLEAN DEFAULT FALSE,

@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class NoteService {
@@ -25,7 +26,7 @@ public class NoteService {
         return noteRepository.findAllByOwnerOrderByUpdatedAtDesc(owner);
     }
 
-    public Note getNoteById(Long id, User userDetails) {
+    public Note getNoteById(UUID id, User userDetails) {
         String email = userDetails.getUsername();
         com.noteapp.notetaking.entity.User owner = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found: " + email));
         Note note = noteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Note not found"));
@@ -45,14 +46,14 @@ public class NoteService {
         return noteRepository.save(note);
     }
 
-    public Note updateNote(Long id, Note updated, User userDetails) {
+    public Note updateNote(UUID id, Note updated, User userDetails) {
         Note note = getNoteById(id, userDetails);
         note.setTitle(updated.getTitle());
         note.setBody(updated.getBody());
         return noteRepository.save(note);
     }
 
-    public void deleteNote(Long id, User userDetails) {
+    public void deleteNote(UUID id, User userDetails) {
         Note note = getNoteById(id, userDetails);
         noteRepository.delete(note);
     }

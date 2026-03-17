@@ -1,7 +1,7 @@
 import { apiFetch } from "./api";
 
 export interface UserDTO {
-    id: number;
+    id: string;
     name: string;
     email: string;
     profilePicture: string | null;

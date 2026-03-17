@@ -9,14 +9,14 @@ interface PendingChange {
 
 export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[]>>) {
     // Map of noteId -> pending changes
-    const pendingChanges = useRef<Map<number, PendingChange>>(new Map());
+    const pendingChanges = useRef<Map<string, PendingChange>>(new Map());
     // Map of noteId -> debounce timer
-    const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+    const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
     // Track saving state per note
-    const savingNotes = useRef<Set<number>>(new Set());
+    const savingNotes = useRef<Set<string>>(new Set());
 
     // Save a specific note to the database
-    const saveNote = useCallback(async (noteId: number) => {
+    const saveNote = useCallback(async (noteId: string) => {
         const changes = pendingChanges.current.get(noteId);
         if (!changes) return;
 
@@ -36,7 +36,7 @@ export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[
     }, []);
 
     // Queue a change for a note (called on every edit)
-    const queueChange = useCallback((noteId: number, title: string, body: string) => {
+    const queueChange = useCallback((noteId: string, title: string, body: string) => {
         // 1. Store pending change
         pendingChanges.current.set(noteId, { title, body });
         
@@ -64,7 +64,7 @@ export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[
     }, []);
 
     // Check if a specific note is saving
-    const isSaving = useCallback((noteId: number) => {
+    const isSaving = useCallback((noteId: string) => {
         return savingNotes.current.has(noteId);
     }, []);
 

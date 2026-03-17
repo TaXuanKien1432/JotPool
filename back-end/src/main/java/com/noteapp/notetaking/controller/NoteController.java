@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/notes")
@@ -25,7 +26,7 @@ public class NoteController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Note> getNoteById(@PathVariable Long id, @AuthenticationPrincipal User userDetails) {
+    public ResponseEntity<Note> getNoteById(@PathVariable UUID id, @AuthenticationPrincipal User userDetails) {
         Note note = noteService.getNoteById(id, userDetails);
         return ResponseEntity.ok(note);
     }
@@ -37,13 +38,13 @@ public class NoteController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable Long id, @RequestBody Note updated, @AuthenticationPrincipal User userDetails) {
+    public ResponseEntity<Note> updateNote(@PathVariable UUID id, @RequestBody Note updated, @AuthenticationPrincipal User userDetails) {
         Note note = noteService.updateNote(id, updated, userDetails);
         return ResponseEntity.ok(note);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteNote(@PathVariable Long id, @AuthenticationPrincipal User userDetails) {
+    public ResponseEntity<Void> deleteNote(@PathVariable UUID id, @AuthenticationPrincipal User userDetails) {
         noteService.deleteNote(id, userDetails);
         return ResponseEntity.noContent().build();
     }

@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar'
 import NoteEditor from '../components/NoteEditor'
 
 export interface Note {
-  id: number;
+  id: string;
   title: string;
   body: string;
   createdAt: string;
