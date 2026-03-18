@@ -41,14 +41,15 @@ public class AuthService {
         if (userRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
             throw new ResponseStatusException(HttpStatusCode.valueOf(409), "Email already in use");
         }
-        User user = new User();
-        user.setName(registerDTO.getName());
-        user.setEmail(registerDTO.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(registerDTO.getPassword()));
+        User user = User.builder()
+                .name(registerDTO.getName())
+                .email(registerDTO.getEmail())
+                .passwordHash(passwordEncoder.encode(registerDTO.getPassword()))
+                .build();
 
         User saved = userRepository.save(user);
         String accessToken = jwtUtil.generateToken(saved.getEmail());
-        return new AuthResponseDTO(accessToken);
+        return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
     public AuthResponseDTO login(LoginDTO loginDTO) throws BadCredentialsException {
@@ -57,7 +58,7 @@ public class AuthService {
         );
         User user = userRepository.findByEmail(loginDTO.getEmail()).orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
         String accessToken = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponseDTO(accessToken);
+        return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
     public void oauth2Success(HttpServletResponse response, Authentication authentication) throws IOException {
@@ -80,6 +81,11 @@ public class AuthService {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
-        return new UserDTO(user.getId(), user.getName(), user.getEmail(), user.getProfilePicture());
+        return UserDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .profilePicture(user.getProfilePicture())
+                .build();
     }
 }

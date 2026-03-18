@@ -1,8 +1,12 @@
 package com.noteapp.notetaking.dto;
 
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginDTO {
     private String email;
     private String password;

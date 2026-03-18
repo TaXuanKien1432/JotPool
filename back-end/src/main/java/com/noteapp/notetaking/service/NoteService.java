@@ -39,10 +39,11 @@ public class NoteService {
     public Note createNote(User userDetails) {
         String email = userDetails.getUsername();
         com.noteapp.notetaking.entity.User owner = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found: " + email));
-        Note note = new Note();
-        note.setOwner(owner);
-        note.setTitle("");
-        note.setBody("[]");
+        Note note = Note.builder()
+            .owner(owner)
+            .title("")
+            .body("[]")
+            .build();
         return noteRepository.save(note);
     }
 
