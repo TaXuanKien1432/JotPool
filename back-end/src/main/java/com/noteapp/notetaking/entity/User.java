@@ -33,9 +33,11 @@ public class User {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Builder.Default
     @Column(name = "is_verified")
     private boolean isVerified = false;
 
+    @Builder.Default
     @Column(name = "auth_provider", nullable = false)
     private String authProvider = "LOCAL";
 

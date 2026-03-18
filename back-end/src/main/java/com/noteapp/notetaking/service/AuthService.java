@@ -38,12 +38,13 @@ public class AuthService {
 
     @Transactional
     public AuthResponseDTO register(RegisterDTO registerDTO) throws ResponseStatusException {
-        if (userRepository.findByEmail(registerDTO.getEmail()).isPresent()) {
+        String email = registerDTO.getEmail().trim().toLowerCase();
+        if (userRepository.findByEmail(email).isPresent()) {
             throw new ResponseStatusException(HttpStatusCode.valueOf(409), "Email already in use");
         }
         User user = User.builder()
                 .name(registerDTO.getName())
-                .email(registerDTO.getEmail())
+                .email(email)
                 .passwordHash(passwordEncoder.encode(registerDTO.getPassword()))
                 .build();
 
@@ -53,10 +54,11 @@ public class AuthService {
     }
 
     public AuthResponseDTO login(LoginDTO loginDTO) throws BadCredentialsException {
+        String email = loginDTO.getEmail().trim().toLowerCase();
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getPassword())
+                new UsernamePasswordAuthenticationToken(email, loginDTO.getPassword())
         );
-        User user = userRepository.findByEmail(loginDTO.getEmail()).orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
         String accessToken = jwtUtil.generateToken(user.getEmail());
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }

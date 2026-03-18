@@ -1,34 +1,25 @@
 package com.noteapp.notetaking.service;
 
 import com.noteapp.notetaking.entity.Note;
+import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.repository.NoteRepository;
-import com.noteapp.notetaking.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.security.core.userdetails.User;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class NoteService {
     private final NoteRepository noteRepository;
-    private final UserRepository userRepository;
 
-    public NoteService(NoteRepository noteRepository, UserRepository userRepository) {
-        this.noteRepository = noteRepository;
-        this.userRepository = userRepository;
-    }
-
-    public List<Note> getNotesByUser(User userDetails) {
-        String email = userDetails.getUsername();
-        com.noteapp.notetaking.entity.User owner = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found: " + email));
+    public List<Note> getNotesByUser(User owner) {
         return noteRepository.findAllByOwnerOrderByUpdatedAtDesc(owner);
     }
 
-    public Note getNoteById(UUID id, User userDetails) {
-        String email = userDetails.getUsername();
-        com.noteapp.notetaking.entity.User owner = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found: " + email));
+    public Note getNoteById(UUID id, User owner) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Note not found"));
         if (!note.getOwner().getId().equals(owner.getId())) {
             throw new SecurityException("You do not have access to this note");
@@ -36,9 +27,7 @@ public class NoteService {
         return note;
     }
 
-    public Note createNote(User userDetails) {
-        String email = userDetails.getUsername();
-        com.noteapp.notetaking.entity.User owner = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found: " + email));
+    public Note createNote(User owner) {
         Note note = Note.builder()
             .owner(owner)
             .title("")
@@ -47,15 +36,15 @@ public class NoteService {
         return noteRepository.save(note);
     }
 
-    public Note updateNote(UUID id, Note updated, User userDetails) {
-        Note note = getNoteById(id, userDetails);
+    public Note updateNote(UUID id, Note updated, User owner) {
+        Note note = getNoteById(id, owner);
         note.setTitle(updated.getTitle());
         note.setBody(updated.getBody());
         return noteRepository.save(note);
     }
 
-    public void deleteNote(UUID id, User userDetails) {
-        Note note = getNoteById(id, userDetails);
+    public void deleteNote(UUID id, User owner) {
+        Note note = getNoteById(id, owner);
         noteRepository.delete(note);
     }
 }

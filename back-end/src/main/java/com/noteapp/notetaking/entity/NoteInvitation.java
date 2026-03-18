@@ -39,7 +39,11 @@ public class NoteInvitation {
     @Column(nullable = false, unique = true)
     private String token;
 
+    @Builder.Default
     private String status = "PENDING";
+
+    @Builder.Default
+    private String role = "EDITOR";
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)
