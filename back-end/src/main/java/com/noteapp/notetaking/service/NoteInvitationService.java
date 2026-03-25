@@ -1,6 +1,7 @@
 package com.noteapp.notetaking.service;
 
 import com.noteapp.notetaking.entity.Note;
+import com.noteapp.notetaking.entity.NoteCollaborator;
 import com.noteapp.notetaking.entity.NoteInvitation;
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.repository.*;
@@ -35,7 +36,7 @@ public class NoteInvitationService {
         if (!isOwner && !isEditor) throw new RuntimeException("No permission to invite");
 
         if (inviter.getEmail().equalsIgnoreCase(email)) {
-            throw new RuntimeException("Inviter cannot invite him/herself");
+            throw new RuntimeException("You cannot invite yourself");
         }
 
         if (!List.of("EDITOR", "VIEWER").contains(role)) throw new RuntimeException("Invalid role");
@@ -67,4 +68,66 @@ public class NoteInvitationService {
             notificationService.createInvitationNotification(savedInvitation.getId(), inviter, note, invitee);
         }
     }
+
+    @Transactional
+    public void acceptInvitation(UUID invitationId, User user) {
+        NoteInvitation noteInvitation = noteInvitationRepository.findById(invitationId)
+                .orElseThrow(() -> new RuntimeException("Invitation not found"));
+
+        if (!noteInvitation.getEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("You are not the invitee");
+        }
+
+        if (!"PENDING".equals(noteInvitation.getStatus())) {
+            throw new RuntimeException("Invitation already handled");
+        }
+
+        if (noteInvitation.getExpiresAt() != null &&
+            noteInvitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            noteInvitation.setStatus("EXPIRED");
+            throw new RuntimeException("Invitation expired");
+        }
+
+        Note note = noteInvitation.getNote();
+        if (note == null) throw new RuntimeException("Note not found");
+
+        if (noteCollaboratorRepository.existsByNoteAndUser(note, user)) {
+            return;
+        }
+
+        NoteCollaborator noteCollaborator = NoteCollaborator.builder()
+                .id(UUID.randomUUID())
+                .note(note)
+                .user(user)
+                .role(noteInvitation.getRole())
+                .build();
+        noteCollaboratorRepository.save(noteCollaborator);
+
+        noteInvitation.setInvitee(user);
+        noteInvitation.setStatus("ACCEPTED");
+    }
+
+    @Transactional
+    public void rejectInvitation(UUID invitationId, User user) {
+        NoteInvitation noteInvitation = noteInvitationRepository.findById(invitationId)
+                .orElseThrow(() -> new RuntimeException("Invitation not found"));
+
+        if (!noteInvitation.getEmail().equalsIgnoreCase(user.getEmail())) {
+            throw new RuntimeException("You are not the invitee");
+        }
+
+        if (noteInvitation.getExpiresAt() != null &&
+                noteInvitation.getExpiresAt().isBefore(LocalDateTime.now())) {
+            noteInvitation.setStatus("EXPIRED");
+            return;
+        }
+
+        if (!"PENDING".equals(noteInvitation.getStatus())) {
+            return;
+        }
+
+        noteInvitation.setStatus("REJECTED");
+        noteInvitation.setInvitee(user);
+    }
+
 }
