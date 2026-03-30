@@ -32,10 +32,6 @@ public class NoteInvitation {
     @JoinColumn(name = "inviter_id")
     private User inviter;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "invitee_id")
-    private User invitee;
-
     @Column(nullable = false, unique = true)
     private String token;
 

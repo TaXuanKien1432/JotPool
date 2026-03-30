@@ -33,3 +33,15 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${app_email}
+    password: ${app_password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true

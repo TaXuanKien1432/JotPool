@@ -20,13 +20,13 @@ public class NotificationService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public void createInvitationNotification(UUID invitationId, User inviter, Note note, User invitee) {
+    public void createCollaboratorAddedNotification(User inviter, Note note, User invitee, String role) {
         Map<String, Object> payloadObj = Map.ofEntries(
-                Map.entry("invitationId", invitationId.toString()),
                 Map.entry("noteId", note.getId().toString()),
                 Map.entry("noteTitle", note.getTitle()),
                 Map.entry("inviterName", inviter.getName()),
-                Map.entry("inviterEmail", inviter.getEmail())
+                Map.entry("inviterEmail", inviter.getEmail()),
+                Map.entry("role", role)
         );
         String payload;
         try {
@@ -39,7 +39,7 @@ public class NotificationService {
                 .id(UUID.randomUUID())
                 .user(invitee)
                 .payload(payload)
-                .type("INVITATION")
+                .type("COLLABORATOR_ADDED")
                 .isRead(false)
                 .build();
         notificationRepository.save(notification);
