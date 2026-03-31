@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f7; font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table style="width: 100%; border-spacing: 0; background-color: #f4f4f7; padding: 40px 0;">
+        <tr>
+            <td style="text-align: center;">
+                <table style="width: 560px; border-spacing: 0; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin: 0 auto;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #0473ea; padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">JotPool</h1>
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <h2 style="margin: 0 0 16px; color: #1f2937; font-size: 20px;">You've been invited to join JotPool</h2>
+                            <p style="margin: 0 0 24px; color: #6b7280; font-size: 15px; line-height: 1.6;">
+                                <strong th:text="${inviterName}">Someone</strong> has invited you to collaborate on a note. Create your free account to get started:
+                            </p>
+                            <div style="background-color: #f4f4f7; border-radius: 6px; padding: 16px; margin-bottom: 32px;">
+                                <p style="margin: 0; color: #1f2937; font-size: 16px; font-weight: 500;" th:text="${noteTitle}">Untitled Note</p>
+                                <p style="margin: 4px 0 0; color: #9ca3af; font-size: 13px;">
+                                    Role: <span th:text="${role}">Editor</span>
+                                </p>
+                            </div>
+                            <table style="border-spacing: 0; margin: 0 auto;">
+                                <tr>
+                                    <td style="border-radius: 6px; background-color: #0473ea;">
+                                        <a th:href="${registerUrl}" style="display: inline-block; padding: 14px 32px; color: #ffffff; text-decoration: none; font-size: 15px; font-weight: 500;">Join &amp; Collaborate</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 24px 32px; border-top: 1px solid #eaeaec;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                This invitation expires in 7 days. If you didn't expect this email, you can safely ignore it.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
