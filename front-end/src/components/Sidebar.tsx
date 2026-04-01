@@ -13,10 +13,9 @@ interface SidebarProps {
   notes: Note[];
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
   selectedNote: Note | null;
-  setSelectedNote: (note: Note | null) => void;
 }
 
-const Sidebar = ({notes, setNotes, selectedNote, setSelectedNote}: SidebarProps) => {
+const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   
   const [loading, setLoading] = useState(true);
   const {user, setUser} = useContext(UserContext)!;
@@ -54,7 +53,7 @@ const Sidebar = ({notes, setNotes, selectedNote, setSelectedNote}: SidebarProps)
     try {
       const newNote = await apiFetch<Note>("/api/notes", {method: "POST"});
       setNotes((prev) => [newNote, ...prev]);
-      setSelectedNote(newNote);
+      navigate(`/home/${newNote.id}`);
     } catch(err) {
       console.error("Failed to create note:", err);
     }
@@ -65,7 +64,7 @@ const Sidebar = ({notes, setNotes, selectedNote, setSelectedNote}: SidebarProps)
     try {
       await apiFetch(`/api/notes/${noteToDelete.id}`, { method: "DELETE" });
       setNotes((prev) => prev.filter((note) => note.id !== noteToDelete.id));
-      if (selectedNote?.id === noteToDelete.id) setSelectedNote(null);
+      if (selectedNote?.id === noteToDelete.id) navigate("/home");
     } catch(err) {
       console.error("Failed to delete note:", err);
     } finally {
@@ -112,7 +111,9 @@ const Sidebar = ({notes, setNotes, selectedNote, setSelectedNote}: SidebarProps)
       {/* HOME NAV */}
       <div 
         className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 ${!selectedNote ? "bg-gray-200" : ""}`}
-        onClick={() => setSelectedNote(null)}
+        onClick={() => {
+          navigate("/home");
+        }}
       >
         <AiOutlineHome className='text-gray-700 w-5 h-5'/>
         <span className='text-gray-700 text-sm'>Home</span>
@@ -136,7 +137,12 @@ const Sidebar = ({notes, setNotes, selectedNote, setSelectedNote}: SidebarProps)
                 selectedNote?.id === note.id ? "bg-gray-200" : "hover:bg-gray-200"}`}
               >
                 <FiFileText className='text-gray-500 w-5 h-5'/>
-                <span className='flex-1 truncate' onClick={() => setSelectedNote(note)}>
+                <span 
+                  className='flex-1 truncate' 
+                  onClick={() => {
+                    navigate(`/home/${note.id}`);
+                  }}
+                >
                   {note.title.trim() || "Untitled"}
                 </span>
                 <FiTrash2 onClick={(e) => {

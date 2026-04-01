@@ -28,6 +28,11 @@ const router = createBrowserRouter([
       <Home />
     </ProtectedRoute>
   )},
+  { path: "/home/:noteId", element: (
+    <ProtectedRoute>
+      <Home />
+    </ProtectedRoute>
+  )},
   { path: "/oauth2/redirect", element: <OAuth2RedirectHandler />}
 ]);
 

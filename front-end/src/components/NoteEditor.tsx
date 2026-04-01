@@ -6,19 +6,20 @@ import "@blocknote/mantine/style.css";
 import { useCreateBlockNote } from "@blocknote/react";
 import { apiFetch } from '../services/api';
 import { useSaveQueue } from '../hooks/useSaveQueue';
+import { useNavigate } from 'react-router-dom';
 
 interface NoteEditorProps {
   notes: Note[];
   setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
   selectedNote: Note | null;
-  setSelectedNote: (note: Note | null) => void;
 }
 
-const NoteEditor = ({setNotes, selectedNote, setSelectedNote}: NoteEditorProps) => {
+const NoteEditor = ({setNotes, selectedNote}: NoteEditorProps) => {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const isLoadingRef = useRef(false); // Flag to ignore onChange during note switch
   const { queueChange, isSaving } = useSaveQueue(setNotes);
+  const navigate = useNavigate();
 
   const blockNoteEditor = useCreateBlockNote({
     initialContent: selectedNote?.body ? JSON.parse(selectedNote.body) : undefined,
@@ -62,7 +63,7 @@ const NoteEditor = ({setNotes, selectedNote, setSelectedNote}: NoteEditorProps) 
     try {
       const newNote = await apiFetch<Note>("/api/notes", {method: "POST"});
       setNotes(prev => [newNote, ...prev]);
-      setSelectedNote(newNote);
+      navigate(`/home/${newNote.id}`);
     } catch (err) {
       console.error("Failed to create note:", err);
     }

@@ -5,6 +5,7 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
@@ -15,6 +16,7 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
 
+    @Async
     public void sendCollaborationEmail(String to, String inviterName, String noteTitle, String role, String noteUrl) throws MessagingException {
         Context context = new Context();
         context.setVariable("inviterName", inviterName);
@@ -33,6 +35,7 @@ public class EmailService {
         mailSender.send(mimeMessage);
     }
 
+    @Async
     public void sendInvitationEmail(String to, String inviterName, String noteTitle, String role, String registerUrl) throws MessagingException {
         Context context = new Context();
         context.setVariable("inviterName", inviterName);
