@@ -9,6 +9,8 @@ import com.noteapp.notetaking.repository.UserRepository;
 import com.noteapp.notetaking.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,18 +25,16 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
+    private final NoteInvitationService noteInvitationService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, JwtUtil jwtUtil) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.authenticationManager = authenticationManager;
-        this.jwtUtil = jwtUtil;
-    }
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
 
     @Transactional
     public AuthResponseDTO register(RegisterDTO registerDTO) throws ResponseStatusException {
@@ -48,8 +48,9 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(registerDTO.getPassword()))
                 .build();
 
-        User saved = userRepository.save(user);
-        String accessToken = jwtUtil.generateToken(saved.getEmail());
+        User savedUser = userRepository.save(user);
+        noteInvitationService.handlePendingInvitations(savedUser);
+        String accessToken = jwtUtil.generateToken(savedUser.getEmail());
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
@@ -69,7 +70,7 @@ public class AuthService {
         System.out.println(">>> oauth2Success email: " + email);
         if (email == null) email = oAuth2User.getAttribute("login") + "@github.local";
         String accessToken = jwtUtil.generateToken(email);
-        String redirectUrl = "http://localhost:5173/oauth2/redirect?token=" + accessToken;
+        String redirectUrl = frontendBaseUrl + "/oauth2/redirect?token=" + accessToken;
 
         response.sendRedirect(redirectUrl);
     }

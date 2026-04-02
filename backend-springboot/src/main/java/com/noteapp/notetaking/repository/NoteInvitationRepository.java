@@ -6,9 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Repository
 public interface NoteInvitationRepository extends JpaRepository<NoteInvitation, UUID> {
-    boolean existsByNoteAndEmailAndStatusAndExpiresAtAfter(Note note, String email, String status, LocalDateTime time);
+    boolean existsByNoteAndEmailAndExpiresAtAfter(Note note, String email, LocalDateTime time);
+    List<NoteInvitation> findByEmailAndExpiresAtAfter(String email, LocalDateTime time);
 }

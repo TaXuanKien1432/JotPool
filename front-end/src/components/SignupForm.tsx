@@ -16,22 +16,22 @@ const SignupForm:React.FC = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
       e.preventDefault();
-          setError(null);
-          setLoading(true);
-          if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-          }
-          try {
-            const userDTO = await register(name, email, password);
-            setUser(userDTO);
-            navigate("/home");
-          } catch (err: any) {
-            console.log(err);
-            setError(err.message || "Signup failed. Please try again.");
-          } finally {
-            setLoading(false);
-          }
+      setError(null);
+      setLoading(true);
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      try {
+        const userDTO = await register(name, email, password);
+        setUser(userDTO);
+        navigate("/home");
+      } catch (err: any) {
+        console.log(err);
+        setError(err.message || "Signup failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     };
   
     return (

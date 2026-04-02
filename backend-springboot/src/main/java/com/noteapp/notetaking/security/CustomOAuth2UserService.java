@@ -2,7 +2,9 @@ package com.noteapp.notetaking.security;
 
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.repository.UserRepository;
+import com.noteapp.notetaking.service.NoteInvitationService;
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -10,12 +12,10 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private final UserRepository userRepository;
-
-    public CustomOAuth2UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final NoteInvitationService noteInvitationService;
 
     @Override
     @Transactional
@@ -42,7 +42,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             user = userRepository.findByEmail(email).orElse(null);
         }
         //cannot find by email then create new user
-        if (user == null) user = new User();
+        boolean isNewUser = (user == null);
+        if (isNewUser) user = new User();
 
         if (registrationId.equals("google")) {
             user.setEmail(email);
@@ -63,6 +64,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             userRepository.save(user);
             System.out.println(">>> Github save email: " + email);
         }
+
+        if (isNewUser) noteInvitationService.handlePendingInvitations(user);
 
         return oAuth2User;
     }
