@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -43,5 +44,17 @@ public class NotificationService {
                 .isRead(false)
                 .build();
         notificationRepository.save(notification);
+    }
+
+    public List<Notification> getNotificationsByUser(User user) {
+        return notificationRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+
+    @Transactional
+    public void changeIsRead(UUID notificationId, User user, boolean isRead) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification not found"));
+        if (!notification.getUser().getId().equals(user.getId())) throw new RuntimeException("No permission to change read status");
+        notification.setRead(isRead);
     }
 }

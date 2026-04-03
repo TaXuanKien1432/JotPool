@@ -27,7 +27,7 @@ public class NoteService {
     private String frontendBaseUrl;
 
     public List<Note> getNotesByUser(User owner) {
-        return noteRepository.findAllByOwnerOrderByUpdatedAtDesc(owner);
+        return noteRepository.findByOwnerOrderByUpdatedAtDesc(owner);
     }
 
     public Note getNoteById(UUID id, User owner) {

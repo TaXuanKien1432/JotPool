@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface NoteRepository extends JpaRepository<Note, UUID> {
-    List<Note> findAllByOwnerOrderByUpdatedAtDesc(User owner);
+    List<Note> findByOwnerOrderByUpdatedAtDesc(User owner);
 }
