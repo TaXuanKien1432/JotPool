@@ -91,7 +91,7 @@ public class NoteService {
             if (noteInvitationService.hasPendingInvitation(note, email)) throw new RuntimeException("Invitation already sent");
             noteInvitationService.createNoteInvitation(note, inviter, email, role);
 
-            String registerUrl = frontendBaseUrl + "/signup";
+            String registerUrl = frontendBaseUrl + "/signup?redirect=/home/" + noteId;
             emailService.sendInvitationEmail(email, inviter.getName(), note.getTitle(), role, registerUrl);
         }
     }

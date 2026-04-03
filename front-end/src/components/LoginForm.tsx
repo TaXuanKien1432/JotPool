@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import { login } from '../services/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Popup from './Popup';
 import { UserContext } from '../contexts/UserContext';
 
@@ -11,6 +11,8 @@ const LoginForm:React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useContext(UserContext)!;
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ const LoginForm:React.FC = () => {
     try {
       const userDTO = await login(email, password);
       setUser(userDTO);
-      navigate("/home");
+      navigate(redirect ? redirect : "/home");
     } catch (err: any) {
       console.log(err);
       setError(err.message || "Login failed. Please try again.");

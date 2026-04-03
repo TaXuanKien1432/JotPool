@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { register } from '../services/auth';
 import Popup from './Popup';
 import { UserContext } from '../contexts/UserContext';
@@ -13,6 +13,8 @@ const SignupForm:React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { setUser } = useContext(UserContext)!;
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get("redirect");
 
   const handleSignup = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -25,7 +27,7 @@ const SignupForm:React.FC = () => {
       try {
         const userDTO = await register(name, email, password);
         setUser(userDTO);
-        navigate("/home");
+        navigate(redirect ? redirect : "/home");
       } catch (err: any) {
         console.log(err);
         setError(err.message || "Signup failed. Please try again.");
