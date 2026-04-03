@@ -15,10 +15,12 @@ const Auth:React.FC = () => {
   const redirect = searchParams.get("redirect");
 
   const startGoogleOAuth = () => {
+    if (redirect) localStorage.setItem("oauth2Redirect", redirect);
     window.location.href = `${API_BASE_URL}/oauth2/authorization/google`;
   };
 
   const startGithubOAuth = () => {
+    if (redirect) localStorage.setItem("oauth2Redirect", redirect);
     window.location.href = `${API_BASE_URL}/oauth2/authorization/github`;
   };
   

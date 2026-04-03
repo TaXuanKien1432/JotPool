@@ -21,7 +21,9 @@ const OAuth2RedirectHandler = () => {
             try {
                 const userDTO = await apiFetch<UserDTO>("/auth/me", { method: "GET" });
                 setUser(userDTO);
-                navigate("/home");
+                const redirect = localStorage.getItem("oauth2Redirect");
+                localStorage.removeItem("oauth2Redirect");
+                navigate(redirect || "/home");
             } catch (err: any) {
                 console.error("Failed to fetch user after OAuth2:", err);
                 localStorage.removeItem("accessToken");
