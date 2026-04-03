@@ -26,7 +26,7 @@ api.interceptors.response.use(
 );
 
 export interface ApiFetchOtions {
-    method: "GET" | "POST" | "PUT" | "DELETE";
+    method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
     body?: unknown;
 }
 

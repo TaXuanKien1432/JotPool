@@ -1,6 +1,8 @@
 package com.noteapp.notetaking.security;
 
 import com.noteapp.notetaking.service.AuthService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -20,14 +22,13 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
 
-    public SecurityConfig(JwtFilter jwtFilter, CustomOAuth2UserService customOAuth2UserService) {
-        this.jwtFilter = jwtFilter;
-        this.customOAuth2UserService = customOAuth2UserService;
-    }
+    @Value("${app.frontend-base-url}")
+    private String frontendBaseUrl;
 
     @Bean
     public AuthenticationSuccessHandler oauth2SuccessHandler(AuthService authService) {
@@ -39,8 +40,8 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedOrigins(List.of(frontendBaseUrl));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);

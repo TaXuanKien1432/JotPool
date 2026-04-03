@@ -1,9 +1,11 @@
 package com.noteapp.notetaking.controller;
 
+import com.noteapp.notetaking.dto.NoteInviteRequestDTO;
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.service.NoteService;
 import com.noteapp.notetaking.service.UserService;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -52,6 +55,22 @@ public class NoteController {
     public ResponseEntity<Void> deleteNote(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
         noteService.deleteNote(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/invite")
+    public ResponseEntity<?> inviteUser(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody NoteInviteRequestDTO noteInviteRequestDTO) {
+        User inviter = userService.getFromUserDetails(userDetails);
+
+        try {
+            noteService.inviteUser(noteInviteRequestDTO.getEmail(), id, inviter, noteInviteRequestDTO.getRole());
+        } catch (MessagingException e) {
+            return ResponseEntity.status(502).body(Map.of("message", "Failed to send invitation email"));
+        }
+
         return ResponseEntity.noContent().build();
     }
 }

@@ -1,5 +1,6 @@
 package com.noteapp.notetaking.dto;
 
+import com.noteapp.notetaking.entity.Notification;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -16,4 +17,15 @@ public class NotificationDTO {
     private String payload;
     private boolean isRead;
     private LocalDateTime createdAt;
+
+    public static NotificationDTO fromEntity(Notification notification) {
+        return NotificationDTO.builder()
+                .id(notification.getId())
+                .type(notification.getType())
+                .payload(notification.getPayload())
+                .isRead(notification.isRead())
+                .createdAt(notification.getCreatedAt())
+                .build();
+    }
+
 }
