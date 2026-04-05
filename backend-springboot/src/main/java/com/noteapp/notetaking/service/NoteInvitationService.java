@@ -20,7 +20,6 @@ public class NoteInvitationService {
 
     public void createNoteInvitation(Note note, User inviter, String email, String role) {
         NoteInvitation noteInvitation = NoteInvitation.builder()
-                .id(UUID.randomUUID())
                 .note(note)
                 .email(email)
                 .inviter(inviter)

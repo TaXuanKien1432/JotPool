@@ -7,7 +7,6 @@ import com.noteapp.notetaking.repository.NoteCollaboratorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,6 @@ public class NoteCollaboratorService {
 
     public void createNoteCollaborator(Note note, User user, String role) {
         NoteCollaborator noteCollaborator = NoteCollaborator.builder()
-                .id(UUID.randomUUID())
                 .note(note)
                 .user(user)
                 .role(role)

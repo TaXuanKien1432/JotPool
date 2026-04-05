@@ -37,7 +37,6 @@ public class NotificationService {
         }
 
         Notification notification = Notification.builder()
-                .id(UUID.randomUUID())
                 .user(invitee)
                 .payload(payload)
                 .type("COLLABORATOR_ADDED")

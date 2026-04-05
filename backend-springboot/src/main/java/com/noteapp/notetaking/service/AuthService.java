@@ -56,10 +56,17 @@ public class AuthService {
 
     public AuthResponseDTO login(LoginDTO loginDTO) throws BadCredentialsException {
         String email = loginDTO.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && user.getPasswordHash() == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This account uses " + user.getAuthProvider() + " login. Please sign in with " + user.getAuthProvider() + " or register to set a password.");
+        }
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(email, loginDTO.getPassword())
         );
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new BadCredentialsException("Invalid email or password"));
+        if (user == null) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
         String accessToken = jwtUtil.generateToken(user.getEmail());
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }

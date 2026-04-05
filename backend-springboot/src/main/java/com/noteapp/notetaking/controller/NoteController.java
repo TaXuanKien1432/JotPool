@@ -48,6 +48,7 @@ public class NoteController {
     public ResponseEntity<Note> updateNote(@PathVariable UUID id, @RequestBody Note updated, @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
         Note note = noteService.updateNote(id, updated, user);
+        System.out.println(">>> Auto-save note " + id + " by " + user.getEmail());
         return ResponseEntity.ok(note);
     }
 
