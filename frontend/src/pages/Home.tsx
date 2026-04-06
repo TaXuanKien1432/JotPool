@@ -7,6 +7,7 @@ export interface Note {
   id: string;
   title: string;
   body: string;
+  collaborative: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import defaultAvatar from '../assets/default-avatar.svg'
 import { AiOutlineHome, AiOutlinePlus } from "react-icons/ai";
 import { BiLock } from 'react-icons/bi';
+import { HiOutlineUserGroup } from 'react-icons/hi';
 import { apiFetch } from '../services/api';
 import { UserContext } from '../contexts/UserContext';
 import type { Note } from '../pages/Home';
@@ -119,26 +120,27 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
         <span className='text-gray-700 text-sm'>Home</span>
       </div>
 
-      {/* PRIVATE NOTES */}
+      {/* NOTES */}
       <div className='flex-1 overflow-y-auto mt-2'>
-        <div className='flex items-center gap-2 px-3 py-2 text-gray-700 text-sm font-medium border-t border-gray-300'>
-          <BiLock className='w-4 h-4' />
-          <span>Private Notes</span>
-        </div>
+        {loading ? (
+          <p className='text-md text-secondary px-3 py-2'>Loading notes...</p>
+        ) : (
+          <>
+            {/* PRIVATE NOTES */}
+            <div className='flex items-center gap-2 px-3 py-2 text-gray-700 text-sm font-medium border-t border-gray-300'>
+              <BiLock className='w-4 h-4' />
+              <span>Private Notes</span>
+            </div>
 
-        <div className='flex-1 overflow-y-auto'>
-          {loading ? (
-            <p className='text-md text-secondary px-3 py-2'>Loading notes...</p>
-          ) : (
-            notes.map((note) => (
+            {notes.filter((note) => !note.collaborative).map((note) => (
               <div
                 key={note.id}
                 className={`group flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-500 cursor-pointer rounded-md ${
                 selectedNote?.id === note.id ? "bg-gray-200" : "hover:bg-gray-200"}`}
               >
                 <FiFileText className='text-gray-500 w-5 h-5'/>
-                <span 
-                  className='flex-1 truncate' 
+                <span
+                  className='flex-1 truncate'
                   onClick={() => {
                     navigate(`/home/${note.id}`);
                   }}
@@ -151,16 +153,45 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
                   setShowConfirm(true);
                 }} className='hidden group-hover:block text-gray-500 hover:text-red-600 w-4 h-4 flex-shrink-0'/>
               </div>
-            ))
-          )}
-        </div>
+            ))}
 
-        <div
-          onClick={handleAddNote}
-          className="flex items-center gap-2 px-3 py-2 mt-2 text-sm text-gray-500 cursor-pointer hover:bg-gray-200">
-          <AiOutlinePlus className='w-5 h-5 text-gray-500' />
-          <span>Add New</span>
-        </div>
+            <div
+              onClick={handleAddNote}
+              className="flex items-center gap-2 px-3 py-2 mt-2 text-sm text-gray-500 cursor-pointer hover:bg-gray-200">
+              <AiOutlinePlus className='w-5 h-5 text-gray-500' />
+              <span>Add New</span>
+            </div>
+
+            {/* COLLABORATIVE NOTES */}
+            <div className='flex items-center gap-2 px-3 py-2 mt-2 text-gray-700 text-sm font-medium border-t border-gray-300'>
+              <HiOutlineUserGroup className='w-4 h-4' />
+              <span>Collaborative Notes</span>
+            </div>
+
+            {notes.filter((note) => note.collaborative).map((note) => (
+              <div
+                key={note.id}
+                className={`group flex items-center justify-between gap-2 px-3 py-2 text-sm text-gray-500 cursor-pointer rounded-md ${
+                selectedNote?.id === note.id ? "bg-gray-200" : "hover:bg-gray-200"}`}
+              >
+                <FiFileText className='text-gray-500 w-5 h-5'/>
+                <span
+                  className='flex-1 truncate'
+                  onClick={() => {
+                    navigate(`/home/${note.id}`);
+                  }}
+                >
+                  {note.title.trim() || "Untitled"}
+                </span>
+                <FiTrash2 onClick={(e) => {
+                  e.stopPropagation;
+                  setNoteToDelete(note);
+                  setShowConfirm(true);
+                }} className='hidden group-hover:block text-gray-500 hover:text-red-600 w-4 h-4 flex-shrink-0'/>
+              </div>
+            ))}
+          </>
+        )}
       </div>
       
       <ConfirmationPopup 

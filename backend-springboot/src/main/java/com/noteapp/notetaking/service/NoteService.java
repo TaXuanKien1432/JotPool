@@ -26,13 +26,15 @@ public class NoteService {
     @Value("${app.frontend-base-url}")
     private String frontendBaseUrl;
 
-    public List<Note> getNotesByUser(User owner) {
-        return noteRepository.findByOwnerOrderByUpdatedAtDesc(owner);
+    public List<Note> getNotesByUser(User user) {
+        return noteRepository.findAccessibleByUserOrderByUpdatedAtDesc(user);
     }
 
-    public Note getNoteById(UUID id, User owner) {
+    public Note getNoteById(UUID id, User user) {
         Note note = noteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Note not found"));
-        if (!note.getOwner().getId().equals(owner.getId())) {
+        boolean isOwner = note.getOwner().getId().equals(user.getId());
+        boolean isCollaborator = noteCollaboratorService.existsByNoteAndUser(note, user);
+        if (!isOwner && !isCollaborator) {
             throw new SecurityException("You do not have access to this note");
         }
         return note;
@@ -47,10 +49,10 @@ public class NoteService {
         return noteRepository.save(note);
     }
 
-    public Note updateNote(UUID id, Note updated, User owner) {
-        Note note = getNoteById(id, owner);
-        note.setTitle(updated.getTitle());
-        note.setBody(updated.getBody());
+    public Note updateNote(UUID id, String title, String body, User user) {
+        Note note = getNoteById(id, user);
+        note.setTitle(title);
+        note.setBody(body);
         return noteRepository.save(note);
     }
 

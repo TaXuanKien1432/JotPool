@@ -1,6 +1,8 @@
 package com.noteapp.notetaking.controller;
 
+import com.noteapp.notetaking.dto.NoteDTO;
 import com.noteapp.notetaking.dto.NoteInviteRequestDTO;
+import com.noteapp.notetaking.dto.UpdateNoteRequestDTO;
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.service.NoteService;
@@ -24,32 +26,34 @@ public class NoteController {
     private final UserService userService;
 
     @GetMapping
-    public ResponseEntity<List<Note>> getNotesByUser(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<NoteDTO>> getNotesByUser(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
-        List<Note> notes = noteService.getNotesByUser(user);
+        List<NoteDTO> notes = noteService.getNotesByUser(user).stream()
+                .map(NoteDTO::from)
+                .toList();
         return ResponseEntity.ok(notes);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Note> getNoteById(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<NoteDTO> getNoteById(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
         Note note = noteService.getNoteById(id, user);
-        return ResponseEntity.ok(note);
+        return ResponseEntity.ok(NoteDTO.from(note));
     }
 
     @PostMapping
-    public ResponseEntity<Note> createNote(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<NoteDTO> createNote(@AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
         Note note = noteService.createNote(user);
-        return ResponseEntity.ok(note);
+        return ResponseEntity.ok(NoteDTO.from(note));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Note> updateNote(@PathVariable UUID id, @RequestBody Note updated, @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<NoteDTO> updateNote(@PathVariable UUID id, @RequestBody UpdateNoteRequestDTO updated, @AuthenticationPrincipal UserDetails userDetails) {
         User user = userService.getFromUserDetails(userDetails);
-        Note note = noteService.updateNote(id, updated, user);
+        Note note = noteService.updateNote(id, updated.getTitle(), updated.getBody(), user);
         System.out.println(">>> Auto-save note " + id + " by " + user.getEmail());
-        return ResponseEntity.ok(note);
+        return ResponseEntity.ok(NoteDTO.from(note));
     }
 
     @DeleteMapping("/{id}")

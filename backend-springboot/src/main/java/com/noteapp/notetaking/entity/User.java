@@ -1,5 +1,6 @@
 package com.noteapp.notetaking.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -30,6 +31,7 @@ public class User {
     @Column(name = "profile_picture")
     private String profilePicture;
 
+    @JsonIgnore
     @Column(name = "password_hash")
     private String passwordHash;
 
