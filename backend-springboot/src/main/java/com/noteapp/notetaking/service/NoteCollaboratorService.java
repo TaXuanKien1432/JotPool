@@ -31,5 +31,8 @@ public class NoteCollaboratorService {
                 .role(role)
                 .build();
         noteCollaboratorRepository.save(noteCollaborator);
+        if (!note.isCollaborative()) {
+            note.setCollaborative(true);
+        }
     }
 }
