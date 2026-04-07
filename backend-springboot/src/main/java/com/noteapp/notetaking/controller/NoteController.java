@@ -78,6 +78,17 @@ public class NoteController {
         return ResponseEntity.ok(collaborators);
     }
 
+    @DeleteMapping("/{noteId}/collaborators/{collaboratorId}")
+    public ResponseEntity<Void> removeCollaborator(
+            @PathVariable UUID noteId,
+            @PathVariable UUID collaboratorId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getFromUserDetails(userDetails);
+        Note note = noteService.getNoteById(noteId, user);
+        noteCollaboratorService.removeCollaborator(note, collaboratorId, user);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{id}/invite")
     public ResponseEntity<?> inviteUser(
             @PathVariable UUID id,

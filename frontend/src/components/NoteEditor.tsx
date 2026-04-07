@@ -7,6 +7,8 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { apiFetch } from '../services/api';
 import { useSaveQueue } from '../hooks/useSaveQueue';
 import { useNavigate } from 'react-router-dom';
+import { FiUserPlus } from 'react-icons/fi';
+import InvitePanel from './InvitePanel';
 
 interface NoteEditorProps {
   notes: Note[];
@@ -17,6 +19,7 @@ interface NoteEditorProps {
 const NoteEditor = ({setNotes, selectedNote}: NoteEditorProps) => {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [showInvitePanel, setShowInvitePanel] = useState(false);
   const isLoadingRef = useRef(false); // Flag to ignore onChange during note switch
   const { queueChange, isSaving } = useSaveQueue(setNotes);
   const navigate = useNavigate();
@@ -87,6 +90,23 @@ const NoteEditor = ({setNotes, selectedNote}: NoteEditorProps) => {
 
   return (
     <div className='flex flex-col h-screen w-full p-8 bg-white overflow-y-auto'>
+      {/* Top bar */}
+      <div className='relative flex items-center justify-end mb-2'>
+        <button
+          onClick={() => setShowInvitePanel((prev) => !prev)}
+          className='flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100'
+        >
+          <FiUserPlus className='w-4 h-4' />
+          Share
+        </button>
+        <InvitePanel
+          isOpen={showInvitePanel}
+          onClose={() => setShowInvitePanel(false)}
+          noteId={selectedNote.id}
+          setNotes={setNotes}
+        />
+      </div>
+
       {/* Title */}
       <input
         value={title}
