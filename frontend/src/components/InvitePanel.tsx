@@ -28,6 +28,7 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
   const [role, setRole] = useState<"VIEWER" | "EDITOR">("VIEWER");
   const [submitting, setSubmitting] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchCollaborators = async () => {
     try {
@@ -45,22 +46,24 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
 
   const handleInvite = async () => {
     setSubmitting(true);
+    setError(null);
     try {
       await apiFetch(`/api/notes/${noteId}/invite`, { method: "POST", body: { email, role } });
       setEmail("");
       setRole("VIEWER");
       fetchCollaborators();
-      setNotes((prev) => 
+      setNotes((prev) =>
         prev.map((n) => (n.id === noteId ? {...n, collaborative: true} : n))
       );
-    } catch (err) {
-      console.error("Failed to invite:", err);
+    } catch (err: any) {
+      setError(err.message || "Failed to invite");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleRemove = async (collaboratorId: string) => {
+    setError(null);
     try {
       await apiFetch(`/api/notes/${noteId}/collaborators/${collaboratorId}`, { method: "DELETE" });
       const isSelf = collaboratorId === user?.id;
@@ -78,8 +81,8 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
           );
         }
       }
-    } catch (err) {
-      console.error("Failed to remove collaborator:", err);
+    } catch (err: any) {
+      setError(err.message || "Failed to remove collaborator");
     }
   };
 
@@ -126,6 +129,9 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
           Invite
         </button>
       </div>
+
+      {/* Error message */}
+      {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
 
       {/* Current collaborators list */}
       <div className="mt-4 border-t border-gray-200 pt-3">
