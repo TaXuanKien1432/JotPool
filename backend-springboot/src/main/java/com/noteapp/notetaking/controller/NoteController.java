@@ -1,10 +1,12 @@
 package com.noteapp.notetaking.controller;
 
+import com.noteapp.notetaking.dto.CollaboratorDTO;
 import com.noteapp.notetaking.dto.NoteDTO;
 import com.noteapp.notetaking.dto.NoteInviteRequestDTO;
 import com.noteapp.notetaking.dto.UpdateNoteRequestDTO;
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.User;
+import com.noteapp.notetaking.service.NoteCollaboratorService;
 import com.noteapp.notetaking.service.NoteService;
 import com.noteapp.notetaking.service.UserService;
 import jakarta.mail.MessagingException;
@@ -23,6 +25,7 @@ import java.util.UUID;
 @RequestMapping("/api/notes")
 public class NoteController {
     private final NoteService noteService;
+    private final NoteCollaboratorService noteCollaboratorService;
     private final UserService userService;
 
     @GetMapping
@@ -61,6 +64,18 @@ public class NoteController {
         User user = userService.getFromUserDetails(userDetails);
         noteService.deleteNote(id, user);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/collaborators")
+    public ResponseEntity<List<CollaboratorDTO>> getCollaborators(
+            @PathVariable UUID id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getFromUserDetails(userDetails);
+        Note note = noteService.getNoteById(id, user);
+        List<CollaboratorDTO> collaborators = noteCollaboratorService.getCollaboratorsByNote(note).stream()
+                .map(CollaboratorDTO::from)
+                .toList();
+        return ResponseEntity.ok(collaborators);
     }
 
     @PostMapping("/{id}/invite")

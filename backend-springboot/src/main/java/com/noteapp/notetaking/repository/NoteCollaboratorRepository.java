@@ -6,6 +6,7 @@ import com.noteapp.notetaking.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,5 @@ import java.util.UUID;
 public interface NoteCollaboratorRepository extends JpaRepository<NoteCollaborator, UUID> {
     boolean existsByNoteAndUser(Note note, User user);
     Optional<NoteCollaborator> findByNoteAndUser(Note note, User user);
+    List<NoteCollaborator> findByNote(Note note);
 }

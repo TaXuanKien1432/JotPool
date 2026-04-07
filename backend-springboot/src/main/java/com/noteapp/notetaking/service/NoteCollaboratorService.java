@@ -7,11 +7,16 @@ import com.noteapp.notetaking.repository.NoteCollaboratorRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class NoteCollaboratorService {
     private final NoteCollaboratorRepository noteCollaboratorRepository;
+
+    public List<NoteCollaborator> getCollaboratorsByNote(Note note) {
+        return noteCollaboratorRepository.findByNote(note);
+    }
 
     public boolean isEditor(Note note, User user) {
         return noteCollaboratorRepository
