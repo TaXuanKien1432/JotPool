@@ -9,6 +9,7 @@ import { UserContext } from '../contexts/UserContext';
 import type { Note } from '../pages/Home';
 import { FiFileText, FiTrash2 } from 'react-icons/fi';
 import ConfirmationPopup from './ConfirmationPopup';
+import { useOutsideClick } from '../hooks/useOutsideClick';
 
 interface SidebarProps {
   notes: Note[];
@@ -23,13 +24,11 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useOutsideClick<HTMLDivElement>(showMenu, () => setShowMenu(false));
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchNotes();
-    document.addEventListener("click", handleOutsideClick);
-    return () => document.removeEventListener("click", handleOutsideClick);
+    fetchNotes(); 
   }, []);
 
   const fetchNotes = async () => {
@@ -74,22 +73,13 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
     }
   }
 
-  const handleOutsideClick = (e: MouseEvent) => {
-    if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-      setShowMenu(false);
-    }
-  };
-
   return (
     <aside className="w-72 h-screen bg-gray-100 border-r border-gray-300 flex flex-col flex-shrink-0 p-2">
       {/* USER PROFILE */}
       <div className="relative" ref={menuRef}>
         <div 
           className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 rounded-md p-2 mb-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu((prev) => !prev);
-          }}>
+          onClick={() => setShowMenu((prev) => !prev)}>
             <img src={user?.profilePicture || defaultAvatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.src = defaultAvatar; }} />
             <div>{user?.name || "User"}</div>
         </div>
