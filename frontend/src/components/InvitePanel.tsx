@@ -5,6 +5,7 @@ import { apiFetch } from '../services/api';
 import defaultAvatar from '../assets/default-avatar.svg';
 import { UserContext } from '../contexts/UserContext';
 import type { Note } from '../pages/Home';
+import ConfirmationPopup from './ConfirmationPopup';
 
 interface InvitePanelProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
   const [submitting, setSubmitting] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [collaboratorToRemove, setCollaboratorToRemove] = useState<Collaborator | null>(null);
 
   const fetchCollaborators = async () => {
     try {
@@ -62,8 +64,11 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
     }
   };
 
-  const handleRemove = async (collaboratorId: string) => {
+  const handleRemove = async () => {
+    if (!collaboratorToRemove) return;
+    const collaboratorId = collaboratorToRemove.userId;
     setError(null);
+    setCollaboratorToRemove(null);
     try {
       await apiFetch(`/api/notes/${noteId}/collaborators/${collaboratorId}`, { method: "DELETE" });
       const isSelf = collaboratorId === user?.id;
@@ -158,7 +163,7 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-xs text-gray-500">{c.role}</span>
                   <button
-                    onClick={() => handleRemove(c.userId)}
+                    onClick={() => setCollaboratorToRemove(c)}
                     className="text-xs text-red-500 hover:text-red-700"
                   >
                     Remove
@@ -169,6 +174,20 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
           )}
         </div>
       </div>
+
+      <ConfirmationPopup
+        isOpen={collaboratorToRemove !== null}
+        title={collaboratorToRemove?.userId === user?.id ? "Leave Note" : "Remove Collaborator"}
+        message={
+          collaboratorToRemove?.userId === user?.id
+            ? "Are you sure you want to leave this note?"
+            : `Are you sure you want to remove ${collaboratorToRemove?.name} from this note?`
+        }
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        onConfirm={handleRemove}
+        onCancel={() => setCollaboratorToRemove(null)}
+      />
     </div>
   );
 };
