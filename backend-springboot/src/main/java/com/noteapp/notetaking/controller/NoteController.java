@@ -17,7 +17,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -90,18 +89,12 @@ public class NoteController {
     }
 
     @PostMapping("/{id}/invite")
-    public ResponseEntity<?> inviteUser(
+    public ResponseEntity<Void> inviteUser(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody NoteInviteRequestDTO noteInviteRequestDTO) {
+            @RequestBody NoteInviteRequestDTO noteInviteRequestDTO) throws MessagingException {
         User inviter = userService.getFromUserDetails(userDetails);
-
-        try {
-            noteService.inviteUser(noteInviteRequestDTO.getEmail(), id, inviter, noteInviteRequestDTO.getRole());
-        } catch (MessagingException e) {
-            return ResponseEntity.status(502).body(Map.of("message", "Failed to send invitation email"));
-        }
-
+        noteService.inviteUser(noteInviteRequestDTO.getEmail(), id, inviter, noteInviteRequestDTO.getRole());
         return ResponseEntity.noContent().build();
     }
 }

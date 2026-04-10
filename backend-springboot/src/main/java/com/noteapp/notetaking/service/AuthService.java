@@ -6,13 +6,14 @@ import com.noteapp.notetaking.dto.RegisterDTO;
 import com.noteapp.notetaking.dto.UserDTO;
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.repository.UserRepository;
+import com.noteapp.notetaking.exception.BadRequestException;
+import com.noteapp.notetaking.exception.ConflictException;
+import com.noteapp.notetaking.exception.ResourceNotFoundException;
 import com.noteapp.notetaking.util.JwtUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 
@@ -37,10 +37,10 @@ public class AuthService {
     private String frontendBaseUrl;
 
     @Transactional
-    public AuthResponseDTO register(RegisterDTO registerDTO) throws ResponseStatusException {
+    public AuthResponseDTO register(RegisterDTO registerDTO) {
         String email = registerDTO.getEmail().trim().toLowerCase();
         if (userRepository.findByEmail(email).isPresent()) {
-            throw new ResponseStatusException(HttpStatusCode.valueOf(409), "Email already in use");
+            throw new ConflictException("Email already in use");
         }
         User user = User.builder()
                 .name(registerDTO.getName())
@@ -54,11 +54,11 @@ public class AuthService {
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
-    public AuthResponseDTO login(LoginDTO loginDTO) throws BadCredentialsException {
+    public AuthResponseDTO login(LoginDTO loginDTO) {
         String email = loginDTO.getEmail().trim().toLowerCase();
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && user.getPasswordHash() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+            throw new BadRequestException(
                     "This account uses " + user.getAuthProvider() + " login. Please sign in with " + user.getAuthProvider() + " or register to set a password.");
         }
         authenticationManager.authenticate(
@@ -85,11 +85,11 @@ public class AuthService {
     public UserDTO getCurrentUser(String accessToken) {
         String email = jwtUtil.extractEmail(accessToken);
         if (!jwtUtil.validateToken(accessToken, email)) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+            throw new BadCredentialsException("Invalid or expired token");
         }
         User user = userRepository.findByEmail(email).orElse(null);
         if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            throw new ResourceNotFoundException("User not found");
         }
         return UserDTO.builder()
                 .id(user.getId())

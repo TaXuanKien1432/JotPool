@@ -3,8 +3,9 @@ package com.noteapp.notetaking.service;
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.NoteCollaborator;
 import com.noteapp.notetaking.entity.User;
+import com.noteapp.notetaking.exception.ForbiddenException;
+import com.noteapp.notetaking.exception.ResourceNotFoundException;
 import com.noteapp.notetaking.repository.NoteCollaboratorRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,14 +38,14 @@ public class NoteCollaboratorService {
         boolean isOwner = note.getOwner().getId().equals(requester.getId());
         boolean isSelfRemoval = requester.getId().equals(collaboratorUserId);
         if (!isOwner && !isSelfRemoval) {
-            throw new SecurityException("No permission to remove collaborator");
+            throw new ForbiddenException("No permission to remove collaborator");
         }
 
         List<NoteCollaborator> collaborators = noteCollaboratorRepository.findByNote(note);
         NoteCollaborator collaborator = collaborators.stream()
                 .filter(c -> c.getUser().getId().equals(collaboratorUserId))
                 .findFirst()
-                .orElseThrow(() -> new EntityNotFoundException("Collaborator not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Collaborator not found"));
 
         noteCollaboratorRepository.delete(collaborator);
 

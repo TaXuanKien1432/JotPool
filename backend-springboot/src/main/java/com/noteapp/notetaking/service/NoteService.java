@@ -2,9 +2,12 @@ package com.noteapp.notetaking.service;
 
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.User;
+import com.noteapp.notetaking.exception.BadRequestException;
+import com.noteapp.notetaking.exception.ConflictException;
+import com.noteapp.notetaking.exception.ForbiddenException;
+import com.noteapp.notetaking.exception.ResourceNotFoundException;
 import com.noteapp.notetaking.repository.NoteRepository;
 import jakarta.mail.MessagingException;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,11 +34,11 @@ public class NoteService {
     }
 
     public Note getNoteById(UUID id, User user) {
-        Note note = noteRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Note not found"));
+        Note note = noteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Note not found"));
         boolean isOwner = note.getOwner().getId().equals(user.getId());
         boolean isCollaborator = noteCollaboratorService.existsByNoteAndUser(note, user);
         if (!isOwner && !isCollaborator) {
-            throw new SecurityException("You do not have access to this note");
+            throw new ForbiddenException("You do not have access to this note");
         }
         return note;
     }
@@ -65,22 +68,22 @@ public class NoteService {
     public void inviteUser(String email, UUID noteId, User inviter, String role) throws MessagingException {
         email = email.trim().toLowerCase();
         Note note = noteRepository.findById(noteId)
-                .orElseThrow(() -> new RuntimeException("Note not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found"));
 
         boolean isOwner = note.getOwner().getId().equals(inviter.getId());
         boolean isEditor = noteCollaboratorService.isEditor(note, inviter);
-        if (!isOwner && !isEditor) throw new RuntimeException("No permission to invite");
+        if (!isOwner && !isEditor) throw new ForbiddenException("No permission to invite");
 
         if (inviter.getEmail().equalsIgnoreCase(email)) {
-            throw new RuntimeException("You cannot invite yourself");
+            throw new BadRequestException("You cannot invite yourself");
         }
 
-        if (!List.of("EDITOR", "VIEWER").contains(role)) throw new RuntimeException("Invalid role");
+        if (!List.of("EDITOR", "VIEWER").contains(role)) throw new BadRequestException("Invalid role");
 
 
         User invitee = userService.findByEmail(email).orElse(null);
         if (invitee != null) {
-            if (noteCollaboratorService.existsByNoteAndUser(note, invitee)) throw new RuntimeException("User already a collaborator");
+            if (noteCollaboratorService.existsByNoteAndUser(note, invitee)) throw new ConflictException("User already a collaborator");
             // create new note collaborator immediately, create new notification, also send email
             noteCollaboratorService.createNoteCollaborator(note, invitee, role);
             notificationService.createCollaboratorAddedNotification(inviter, note, invitee, role);
@@ -90,7 +93,7 @@ public class NoteService {
         }
         else {
             // create new note invitation, also send email
-            if (noteInvitationService.hasPendingInvitation(note, email)) throw new RuntimeException("Invitation already sent");
+            if (noteInvitationService.hasPendingInvitation(note, email)) throw new ConflictException("Invitation already sent");
             noteInvitationService.createNoteInvitation(note, inviter, email, role);
 
             String registerUrl = frontendBaseUrl + "/signup?redirect=/home/" + noteId;

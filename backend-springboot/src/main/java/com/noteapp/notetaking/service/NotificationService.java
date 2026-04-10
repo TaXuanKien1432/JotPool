@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.noteapp.notetaking.entity.Note;
 import com.noteapp.notetaking.entity.Notification;
 import com.noteapp.notetaking.entity.User;
+import com.noteapp.notetaking.exception.ForbiddenException;
+import com.noteapp.notetaking.exception.ResourceNotFoundException;
 import com.noteapp.notetaking.repository.NotificationRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -52,8 +54,8 @@ public class NotificationService {
     @Transactional
     public void changeIsRead(UUID notificationId, User user, boolean isRead) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found"));
-        if (!notification.getUser().getId().equals(user.getId())) throw new RuntimeException("No permission to change read status");
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));
+        if (!notification.getUser().getId().equals(user.getId())) throw new ForbiddenException("No permission to change read status");
         notification.setRead(isRead);
     }
 }
