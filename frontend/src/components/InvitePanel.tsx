@@ -26,7 +26,7 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
   const { user } = useContext(UserContext)!;
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"VIEWER" | "EDITOR">("VIEWER");
+  const [role, setRole] = useState<"EDITOR" | "VIEWER">("EDITOR");
   const [submitting, setSubmitting] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -46,13 +46,20 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
     fetchCollaborators();
   }, [noteId, isOpen]);
 
+  const isValidEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   const handleInvite = async () => {
-    setSubmitting(true);
     setError(null);
+    if (!isValidEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    setSubmitting(true);
     try {
       await apiFetch(`/api/notes/${noteId}/invite`, { method: "POST", body: { email, role } });
       setEmail("");
-      setRole("VIEWER");
+      setRole("EDITOR");
       fetchCollaborators();
       setNotes((prev) =>
         prev.map((n) => (n.id === noteId ? {...n, collaborative: true} : n))
@@ -123,8 +130,8 @@ const InvitePanel = ({ isOpen, onClose, noteId, setNotes }: InvitePanelProps) =>
           }}
           className="px-2 py-2 text-sm border border-gray-300 rounded-md outline-none bg-white focus:border-gray-500"
         >
-          <option value="VIEWER">Viewer</option>
           <option value="EDITOR">Editor</option>
+          <option value="VIEWER">Viewer</option>
         </select>
         <button
           onClick={handleInvite}
