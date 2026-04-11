@@ -4,6 +4,7 @@ import defaultAvatar from '../assets/default-avatar.svg'
 import { AiOutlineHome, AiOutlinePlus } from "react-icons/ai";
 import { BiLock } from 'react-icons/bi';
 import { HiOutlineUserGroup } from 'react-icons/hi';
+import { IoNotificationsOutline } from 'react-icons/io5';
 import { apiFetch } from '../services/api';
 import { UserContext } from '../contexts/UserContext';
 import type { Note } from '../pages/Home';
@@ -24,6 +25,10 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const unreadCount = 0;
   const menuRef = useOutsideClick<HTMLDivElement>(showMenu, () => setShowMenu(false));
   const navigate = useNavigate();
 
