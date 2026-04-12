@@ -18,33 +18,82 @@ interface SidebarProps {
   selectedNote: Note | null;
 }
 
+interface CollaboratorAddedPayload {
+  noteId: string;
+  noteTitle: string;
+  inviterName: string;
+  inviterEmail: string;
+  role: string;
+}
+
+interface Notification {
+  id: string;
+  type: string;
+  payload: string;
+  read: boolean;
+  createdAt: string
+}
+
+const renderNotification = (notification: Notification) => {
+  try {
+    if (notification.type === "COLLABORATOR_ADDED") {
+      const data: CollaboratorAddedPayload = JSON.parse(notification.payload);
+      return (
+        <>
+          <p className='text-sm text-gray-800'>
+            <span className='font-medium'>{data.inviterName}</span> added you to{" "}
+            <span className='font-medium'>"{data.noteTitle || "Untitled"}"</span> as{" "}
+            <span className='capitalize font-medium'>{data.role}</span>
+          </p>
+          <p className='text-xs text-gray-500 mt-1'>{data.inviterEmail}</p>
+        </>
+      );
+    }
+    return <p className='text-sm text-gray-800 break-words'>{notification.payload}</p>;
+  } catch {
+    return <p className='text-sm text-gray-800 break-words'>{notification.payload}</p>;
+  }
+};
+
 const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
-  
-  const [loading, setLoading] = useState(true);
+  const [noteLoading, setNoteLoading] = useState(true);
   const {user, setUser} = useContext(UserContext)!;
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [notifLoading, setNotifLoading] = useState(false);
-  const unreadCount = 0;
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notiLoading, setNotiLoading] = useState(false);
+  const unreadCount = notifications.filter(n => !n.read).length;
   const menuRef = useOutsideClick<HTMLDivElement>(showMenu, () => setShowMenu(false));
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchNotes(); 
+    fetchNotes();
+    fetchNotifications(); 
   }, []);
 
   const fetchNotes = async () => {
     try {
-      setLoading(true);
+      setNoteLoading(true);
       const data = await apiFetch<Note[]>("/api/notes", { method: "GET" });
       setNotes(data);
     } catch(err) {
       console.error("Failed to load notes:", err);
     } finally {
-      setLoading(false);
+      setNoteLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setNotiLoading(true);
+      const data = await apiFetch<Notification[]>("/api/notifications", { method: "GET" });
+      setNotifications(data);
+    } catch(err) {
+      console.error("Failed to load notifications:", err);
+    } finally {
+      setNotiLoading(false);
     }
   };
 
@@ -79,6 +128,7 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   }
 
   return (
+    <>
     <aside className="w-72 h-screen bg-gray-100 border-r border-gray-300 flex flex-col flex-shrink-0 p-2">
       {/* USER PROFILE */}
       <div className="relative" ref={menuRef}>
@@ -115,9 +165,23 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
         <span className='text-gray-700 text-sm'>Home</span>
       </div>
 
+      {/* NOTIFICATION NAV */}
+      <div
+        className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 ${showNotifications ? "bg-gray-200" : ""}`}
+        onClick={() => setShowNotifications((prev) => !prev)}
+      >
+        <IoNotificationsOutline className='text-gray-700 w-5 h-5' />
+        <span className='text-gray-700 text-sm'>Notifications</span>
+        {unreadCount > 0 && (
+          <span className='ml-auto bg-red-500 text-white text-xs font-medium rounded-full px-2 py-0.5'>
+            {unreadCount}
+          </span>
+        )}
+      </div>
+
       {/* NOTES */}
       <div className='flex-1 overflow-y-auto mt-2'>
-        {loading ? (
+        {noteLoading ? (
           <p className='text-md text-secondary px-3 py-2'>Loading notes...</p>
         ) : (
           <>
@@ -201,8 +265,35 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
           setNoteToDelete(null);
         }}
         />
-      
+
     </aside>
+
+    {/* NOTIFICATION PANEL */}
+    {showNotifications && (
+      <aside className="w-80 h-screen bg-white border-r border-gray-300 flex flex-col flex-shrink-0">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-800">Notifications</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {notiLoading ? (
+            <p className='text-sm text-gray-500 px-4 py-3'>Loading notifications...</p>
+          ) : notifications.length === 0 ? (
+            <p className='text-sm text-gray-500 px-4 py-3'>No notifications yet</p>
+          ) : (
+            notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!n.read ? "bg-blue-50" : ""}`}
+              >
+                {renderNotification(n)}
+                <p className='text-xs text-gray-400 mt-1'>{new Date(n.createdAt).toLocaleString()}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </aside>
+    )}
+    </>
   );
 }
 
