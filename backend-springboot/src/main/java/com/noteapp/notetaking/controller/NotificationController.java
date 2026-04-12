@@ -22,9 +22,14 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<List<NotificationDTO>> getNotificationsByUser(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<List<NotificationDTO>> getNotificationsByUser(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "true") boolean unreadOnly
+    ) {
         User user = userService.getFromUserDetails(userDetails);
-        List<Notification> notifications = notificationService.getNotificationsByUser(user);
+        List<Notification> notifications = unreadOnly ?
+                notificationService.getNotificationsByUserAndIsReadFalse(user) :
+                notificationService.getNotificationsByUser(user);
         List<NotificationDTO> notificationDTOS = notifications.stream()
                 .map(NotificationDTO::fromEntity)
                 .toList();
@@ -35,7 +40,7 @@ public class NotificationController {
     public ResponseEntity<Void> changeIsRead(
             @PathVariable UUID id,
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam("is_read") boolean isRead
+            @RequestParam boolean isRead
             ) {
         User user = userService.getFromUserDetails(userDetails);
         notificationService.changeIsRead(id, user, isRead);

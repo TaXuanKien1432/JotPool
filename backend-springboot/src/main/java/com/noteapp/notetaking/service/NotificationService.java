@@ -8,6 +8,7 @@ import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.exception.ForbiddenException;
 import com.noteapp.notetaking.exception.ResourceNotFoundException;
 import com.noteapp.notetaking.repository.NotificationRepository;
+import java.time.LocalDateTime;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,6 +50,17 @@ public class NotificationService {
 
     public List<Notification> getNotificationsByUser(User user) {
         return notificationRepository.findByUserOrderByCreatedAtDesc(user);
+    }
+
+    public List<Notification> getNotificationsByUserAndIsReadFalse(User user) {
+        return notificationRepository.findByUserAndIsReadFalseOrderByCreatedAtDesc(user);
+    }
+
+    @Transactional
+    public void deleteReadNotificationsOlderThan(int days) {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(days);
+        int deleted = notificationRepository.deleteReadNotificationsOlderThan(cutoff);
+        System.out.println("Deleted " + deleted + " read notifications older than " + days + " days");
     }
 
     @Transactional
