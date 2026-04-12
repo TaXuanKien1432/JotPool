@@ -11,6 +11,8 @@ import type { Note } from '../pages/Home';
 import { FiFileText, FiTrash2 } from 'react-icons/fi';
 import ConfirmationPopup from './ConfirmationPopup';
 import { useOutsideClick } from '../hooks/useOutsideClick';
+import NotificationPanel from './NotificationPanel';
+import type { Filter } from './NotificationPanel';
 
 interface SidebarProps {
   notes: Note[];
@@ -18,42 +20,13 @@ interface SidebarProps {
   selectedNote: Note | null;
 }
 
-interface CollaboratorAddedPayload {
-  noteId: string;
-  noteTitle: string;
-  inviterName: string;
-  inviterEmail: string;
-  role: string;
-}
-
-interface Notification {
+export interface Notification {
   id: string;
   type: string;
   payload: string;
   read: boolean;
-  createdAt: string
+  createdAt: string;
 }
-
-const renderNotification = (notification: Notification) => {
-  try {
-    if (notification.type === "COLLABORATOR_ADDED") {
-      const data: CollaboratorAddedPayload = JSON.parse(notification.payload);
-      return (
-        <>
-          <p className='text-sm text-gray-800'>
-            <span className='font-medium'>{data.inviterName}</span> added you to{" "}
-            <span className='font-medium'>"{data.noteTitle || "Untitled"}"</span> as{" "}
-            <span className='capitalize font-medium'>{data.role}</span>
-          </p>
-          <p className='text-xs text-gray-500 mt-1'>{data.inviterEmail}</p>
-        </>
-      );
-    }
-    return <p className='text-sm text-gray-800 break-words'>{notification.payload}</p>;
-  } catch {
-    return <p className='text-sm text-gray-800 break-words'>{notification.payload}</p>;
-  }
-};
 
 const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   const [noteLoading, setNoteLoading] = useState(true);
@@ -65,13 +38,17 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notiLoading, setNotiLoading] = useState(false);
   const unreadCount = notifications.filter(n => !n.read).length;
+  const [filter, setFilter] = useState<Filter>("unread");
   const menuRef = useOutsideClick<HTMLDivElement>(showMenu, () => setShowMenu(false));
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchNotes();
-    fetchNotifications(); 
   }, []);
+
+  useEffect(() => {
+    fetchNotifications(filter);
+  }, [filter]);
 
   const fetchNotes = async () => {
     try {
@@ -85,10 +62,11 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
     }
   };
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (activeFilter: Filter) => {
     try {
       setNotiLoading(true);
-      const data = await apiFetch<Notification[]>("/api/notifications", { method: "GET" });
+      const url = activeFilter === "all" ? "/api/notifications?unreadOnly=false" : "/api/notifications";
+      const data = await apiFetch<Notification[]>(url, { method: "GET" });
       setNotifications(data);
     } catch(err) {
       console.error("Failed to load notifications:", err);
@@ -268,30 +246,13 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
 
     </aside>
 
-    {/* NOTIFICATION PANEL */}
     {showNotifications && (
-      <aside className="w-80 h-screen bg-white border-r border-gray-300 flex flex-col flex-shrink-0">
-        <div className="px-4 py-3 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-800">Notifications</h2>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {notiLoading ? (
-            <p className='text-sm text-gray-500 px-4 py-3'>Loading notifications...</p>
-          ) : notifications.length === 0 ? (
-            <p className='text-sm text-gray-500 px-4 py-3'>No notifications yet</p>
-          ) : (
-            notifications.map((n) => (
-              <div
-                key={n.id}
-                className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!n.read ? "bg-blue-50" : ""}`}
-              >
-                {renderNotification(n)}
-                <p className='text-xs text-gray-400 mt-1'>{new Date(n.createdAt).toLocaleString()}</p>
-              </div>
-            ))
-          )}
-        </div>
-      </aside>
+      <NotificationPanel
+        notifications={notifications}
+        loading={notiLoading}
+        filter={filter}
+        setFilter={setFilter}
+      />
     )}
     </>
   );
