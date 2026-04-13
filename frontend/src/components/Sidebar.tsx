@@ -40,6 +40,7 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
   const unreadCount = notifications.filter(n => !n.read).length;
   const [filter, setFilter] = useState<Filter>("unread");
   const menuRef = useOutsideClick<HTMLDivElement>(showMenu, () => setShowMenu(false));
+  const notiRef = useOutsideClick<HTMLDivElement>(showNotifications, () => setShowNotifications(false));
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +73,24 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
       console.error("Failed to load notifications:", err);
     } finally {
       setNotiLoading(false);
+    }
+  };
+
+  const toggleReadStatus = async (notificationId: string, currentlyRead: boolean) => {
+    try {
+      await apiFetch(`/api/notifications/${notificationId}/status?isRead=${!currentlyRead}`, { method: "PATCH" });
+      setNotifications((prev) => prev.map(noti => noti.id === notificationId ? {...noti, read: !noti.read} : noti));
+    } catch (err) {
+      console.error("Failed to change read status of the notification:", err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await apiFetch("/api/notifications/read-all", { method: "PATCH" });
+      setNotifications(prev => prev.map(noti => ({...noti, read: true})));
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
     }
   };
 
@@ -134,7 +153,7 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
 
       {/* HOME NAV */}
       <div 
-        className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 ${!selectedNote ? "bg-gray-200" : ""}`}
+        className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 select-none ${!selectedNote ? "bg-gray-200" : ""}`}
         onClick={() => {
           navigate("/home");
         }}
@@ -144,16 +163,28 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
       </div>
 
       {/* NOTIFICATION NAV */}
-      <div
-        className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 ${showNotifications ? "bg-gray-200" : ""}`}
-        onClick={() => setShowNotifications((prev) => !prev)}
-      >
-        <IoNotificationsOutline className='text-gray-700 w-5 h-5' />
-        <span className='text-gray-700 text-sm'>Notifications</span>
-        {unreadCount > 0 && (
-          <span className='ml-auto bg-red-500 text-white text-xs font-medium rounded-full px-2 py-0.5'>
-            {unreadCount}
-          </span>
+      <div ref={notiRef}>
+        <div
+          className={`flex items-center gap-3 p-3 cursor-pointer rounded-md hover:bg-gray-200 select-none ${showNotifications ? "bg-gray-200" : ""}`}
+          onClick={() => setShowNotifications((prev) => !prev)}
+        >
+          <IoNotificationsOutline className='text-gray-700 w-5 h-5' />
+          <span className='text-gray-700 text-sm'>Notifications</span>
+          {unreadCount > 0 && (
+            <span className='ml-auto bg-red-500 text-white text-xs font-medium rounded-full px-2 py-0.5'>
+              {unreadCount}
+            </span>
+          )}
+        </div>
+        {showNotifications && (
+          <NotificationPanel
+            notifications={notifications}
+            loading={notiLoading}
+            filter={filter}
+            setFilter={setFilter}
+            toggleReadStatus={toggleReadStatus}
+            markAllAsRead={markAllAsRead}
+          />
         )}
       </div>
 
@@ -245,15 +276,6 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
         />
 
     </aside>
-
-    {showNotifications && (
-      <NotificationPanel
-        notifications={notifications}
-        loading={notiLoading}
-        filter={filter}
-        setFilter={setFilter}
-      />
-    )}
     </>
   );
 }
