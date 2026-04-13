@@ -64,6 +64,12 @@ public class NotificationService {
     }
 
     @Transactional
+    public void markAllAsRead(User user) {
+        int updated = notificationRepository.markAllAsRead(user);
+        System.out.println("Marked " + updated + " notifications as read for user " + user.getEmail());
+    }
+
+    @Transactional
     public void changeIsRead(UUID notificationId, User user, boolean isRead) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found"));

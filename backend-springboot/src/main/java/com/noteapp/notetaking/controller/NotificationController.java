@@ -36,6 +36,13 @@ public class NotificationController {
         return ResponseEntity.ok(notificationDTOS);
     }
 
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(@AuthenticationPrincipal UserDetails userDetails) {
+        User user = userService.getFromUserDetails(userDetails);
+        notificationService.markAllAsRead(user);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<Void> changeIsRead(
             @PathVariable UUID id,
