@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +51,7 @@ public class AuthService {
 
         User savedUser = userRepository.save(user);
         noteInvitationService.handlePendingInvitations(savedUser);
-        String accessToken = jwtUtil.generateToken(savedUser.getEmail());
+        String accessToken = jwtUtil.generateToken(savedUser.getId());
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
@@ -67,7 +68,7 @@ public class AuthService {
         if (user == null) {
             throw new BadCredentialsException("Invalid email or password");
         }
-        String accessToken = jwtUtil.generateToken(user.getEmail());
+        String accessToken = jwtUtil.generateToken(user.getId());
         return AuthResponseDTO.builder().accessToken(accessToken).build();
     }
 
@@ -76,18 +77,20 @@ public class AuthService {
         String email = oAuth2User.getAttribute("email");
         System.out.println(">>> oauth2Success email: " + email);
         if (email == null) email = oAuth2User.getAttribute("login") + "@github.local";
-        String accessToken = jwtUtil.generateToken(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found after OAuth2 login"));
+        String accessToken = jwtUtil.generateToken(user.getId());
         String redirectUrl = frontendBaseUrl + "/oauth2/redirect?token=" + accessToken;
 
         response.sendRedirect(redirectUrl);
     }
 
     public UserDTO getCurrentUser(String accessToken) {
-        String email = jwtUtil.extractEmail(accessToken);
-        if (!jwtUtil.validateToken(accessToken, email)) {
+        UUID userId = jwtUtil.extractUserId(accessToken);
+        if (!jwtUtil.validateToken(accessToken, userId)) {
             throw new BadCredentialsException("Invalid or expired token");
         }
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findById(userId).orElse(null);
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
         }

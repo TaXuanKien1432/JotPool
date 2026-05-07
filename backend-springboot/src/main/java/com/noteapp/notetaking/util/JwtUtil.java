@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Component //Generate, Extract and Validate JWT
 public class JwtUtil {
@@ -20,11 +21,11 @@ public class JwtUtil {
         this.SECRET_KEY = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String email) {
+    public String generateToken(UUID userId) {
         Map<String, Object> claims = new HashMap<>();
         return Jwts.builder()
                 .claims(claims)
-                .subject(email)
+                .subject(userId.toString())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(SECRET_KEY)
@@ -39,15 +40,15 @@ public class JwtUtil {
                 .getPayload();
     }
 
-    public String extractEmail(String accessToken) {
-        return extractAllClaims(accessToken).getSubject();
+    public UUID extractUserId(String accessToken) {
+        return UUID.fromString(extractAllClaims(accessToken).getSubject());
     }
 
     public boolean isTokenExpired(String accessToken) {
         return extractAllClaims(accessToken).getExpiration().before(new Date());
     }
 
-    public boolean validateToken(String accessToken, String email) {
-        return email.equals(extractEmail(accessToken)) && !isTokenExpired(accessToken);
+    public boolean validateToken(String accessToken, UUID userId) {
+        return userId.equals(extractUserId(accessToken)) && !isTokenExpired(accessToken);
     }
 }

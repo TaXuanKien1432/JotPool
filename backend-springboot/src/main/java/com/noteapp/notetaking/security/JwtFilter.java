@@ -1,5 +1,7 @@
 package com.noteapp.notetaking.security;
 
+import com.noteapp.notetaking.entity.User;
+import com.noteapp.notetaking.service.UserService;
 import com.noteapp.notetaking.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,21 +11,22 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.UUID;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
-    private final UserDetailsService userDetailsService;
+    private final UserService userService;
 
     @Autowired
-    public JwtFilter(JwtUtil jwtUtil, UserDetailsService userDetailsService) {
+    public JwtFilter(JwtUtil jwtUtil, UserService userService) {
         this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
+        this.userService = userService;
     }
 
     @Override
@@ -39,21 +42,24 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         String authHeader = request.getHeader("Authorization");
         String accessToken = null;
-        String email = null;
+        UUID userId = null;
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             accessToken = authHeader.substring(7);
             try {
-                email = jwtUtil.extractEmail(accessToken);
+                userId = jwtUtil.extractUserId(accessToken);
             } catch (Exception e) {
-                System.out.println("Error extracting email from JWT token");
+                System.out.println("Error extracting userId from JWT token");
             }
         }
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            User user = userService.findById(userId).orElse(null);
 
-            if (jwtUtil.validateToken(accessToken, userDetails.getUsername())) {
+            if (user != null && jwtUtil.validateToken(accessToken, user.getId())) {
+                UserDetails userDetails = new org.springframework.security.core.userdetails.User(
+                        user.getEmail(), "", Collections.emptyList()
+                );
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities()
                 );
