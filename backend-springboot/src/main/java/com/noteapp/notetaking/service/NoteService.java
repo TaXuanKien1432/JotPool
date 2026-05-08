@@ -1,6 +1,8 @@
 package com.noteapp.notetaking.service;
 
+import com.noteapp.notetaking.dto.AccessDTO;
 import com.noteapp.notetaking.entity.Note;
+import com.noteapp.notetaking.entity.NoteCollaborator;
 import com.noteapp.notetaking.entity.User;
 import com.noteapp.notetaking.exception.BadRequestException;
 import com.noteapp.notetaking.exception.ConflictException;
@@ -99,5 +101,18 @@ public class NoteService {
             String registerUrl = frontendBaseUrl + "/signup?redirect=/home/" + noteId;
             emailService.sendInvitationEmail(email, inviter.getName(), note.getTitle(), role, registerUrl);
         }
+    }
+
+    public AccessDTO getAccess(UUID id, UUID userId) {
+        User user = userService.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Note note = noteRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Note not found"));
+
+        if (note.getOwner().getId().equals(user.getId())) {
+            return AccessDTO.builder().role("OWNER").build();
+        }
+
+        NoteCollaborator noteCollaborator = noteCollaboratorService.findByNoteAndUser(note, user).orElse(null);
+        String role = noteCollaborator != null ? noteCollaborator.getRole() : "NONE";
+        return AccessDTO.builder().role(role).build();
     }
 }

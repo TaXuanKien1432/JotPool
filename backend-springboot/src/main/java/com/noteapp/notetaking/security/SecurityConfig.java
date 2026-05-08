@@ -26,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
+    private final InternalAuthFilter internalAuthFilter;
     private final CustomOAuth2UserService customOAuth2UserService;
 
     @Value("${app.frontend-base-url}")
@@ -58,6 +59,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**", "/oauth2/**", "/login/oauth2/**", "/error").permitAll()
+                        .requestMatchers("/internal/**").hasRole("INTERNAL")
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
@@ -69,6 +71,7 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2SuccessHandler)
                 )
+                .addFilterBefore(internalAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

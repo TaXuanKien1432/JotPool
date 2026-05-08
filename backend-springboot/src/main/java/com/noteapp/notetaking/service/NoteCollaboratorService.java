@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -31,6 +32,10 @@ public class NoteCollaboratorService {
 
     public boolean existsByNoteAndUser(Note note, User user) {
         return noteCollaboratorRepository.existsByNoteAndUser(note, user);
+    }
+
+    public Optional<NoteCollaborator> findByNoteAndUser(Note note, User user) {
+        return noteCollaboratorRepository.findByNoteAndUser(note, user);
     }
 
     @Transactional

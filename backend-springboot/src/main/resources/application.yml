@@ -49,3 +49,4 @@ spring:
 app:
   frontend-base-url: ${frontend_base_url}
   jwt-secret: ${jwt_secret}
+  internal-api-key: ${internal_api_key}
