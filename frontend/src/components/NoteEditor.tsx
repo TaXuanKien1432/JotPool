@@ -93,7 +93,7 @@ const NoteEditor = ({setNotes, selectedNote}: NoteEditorProps) => {
   return (
     <div className='flex flex-col h-screen w-full p-8 bg-white overflow-y-auto'>
       {/* Top bar */}
-      <div className='flex items-center justify-end mb-2'>
+      <div className='flex items-center justify-end mb-2 select-none'>
         <div ref={inviteRef} className='relative'>
           <button
             onClick={() => setShowInvitePanel((prev) => !prev)}

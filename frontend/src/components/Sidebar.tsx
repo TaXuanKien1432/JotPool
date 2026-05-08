@@ -128,7 +128,7 @@ const Sidebar = ({notes, setNotes, selectedNote}: SidebarProps) => {
     <>
     <aside className="w-72 h-screen bg-gray-100 border-r border-gray-300 flex flex-col flex-shrink-0 p-2">
       {/* USER PROFILE */}
-      <div className="relative" ref={menuRef}>
+      <div className="relative select-none" ref={menuRef}>
         <div 
           className="flex items-center gap-3 cursor-pointer hover:bg-gray-200 rounded-md p-2 mb-2"
           onClick={() => setShowMenu((prev) => !prev)}>
