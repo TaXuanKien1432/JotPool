@@ -56,6 +56,11 @@ public class NoteService {
 
     public Note updateNote(UUID id, String title, String body, User user) {
         Note note = getNoteById(id, user);
+        boolean isOwner = note.getOwner().getId().equals(user.getId());
+        boolean isEditor = noteCollaboratorService.isEditor(note, user);
+        if (!isOwner && !isEditor) {
+            throw new ForbiddenException("No permission to edit this note");
+        }
         note.setTitle(title);
         note.setBody(body);
         return noteRepository.save(note);
@@ -63,6 +68,9 @@ public class NoteService {
 
     public void deleteNote(UUID id, User owner) {
         Note note = getNoteById(id, owner);
+        if (!note.getOwner().getId().equals(owner.getId())) {
+            throw new ForbiddenException("Only the owner can delete this note");
+        }
         noteRepository.delete(note);
     }
 
