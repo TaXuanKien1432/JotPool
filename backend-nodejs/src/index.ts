@@ -3,6 +3,11 @@ import http from 'http'
 import { WebSocketServer, type WebSocket } from 'ws'
 import jwt from 'jsonwebtoken'
 import type { Duplex } from 'stream'
+import * as syncProtocol from 'y-protocols/sync.js'
+import * as awarenessProtocol from 'y-protocols/awareness.js'
+import * as encoding from 'lib0/encoding.js'
+import * as decoding from 'lib0/decoding.js'
+import { getOrCreateRoom, removeClient } from './room.js'
 
 const PORT = parseInt(process.env.PORT ?? "8081")
 const JWT_SECRET = process.env.JWT_SECRET ?? ""
@@ -17,9 +22,10 @@ type WsContext = {
     userId: string;
     role: string;
     noteId: string;
+    awarenessIds: Set<number>;
 };
 
-type WSWithCtx = WebSocket & { ctx?: WsContext };
+export type WSWithCtx = WebSocket & { ctx: WsContext };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -59,7 +65,7 @@ server.on("upgrade", async (req, socket, head) => {
         return reject(socket, "401 Unauthorized", "no token", noteId);
     }
 
-    // verify jwt
+    // verify jwt and extract userId
     let userId: string;
     try {
         const payload = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"]});
@@ -94,7 +100,7 @@ server.on("upgrade", async (req, socket, head) => {
     }
 
     wss.handleUpgrade(req, socket, head, (ws) => {
-        (ws as WSWithCtx).ctx = { userId, role, noteId };
+        (ws as WSWithCtx).ctx = { userId, role, noteId, awarenessIds: new Set() };
         wss.emit("connection", ws, req);
     });
 });
@@ -102,14 +108,65 @@ server.on("upgrade", async (req, socket, head) => {
 wss.on("connection", (ws: WSWithCtx, req) => {
     console.log("ws connected", { url: req.url, ctx: ws.ctx });
 
+    const room = getOrCreateRoom(ws.ctx.noteId);
+    room.clients.add(ws);
+
+    {
+        // send sync step 1
+        const encoder = encoding.createEncoder();
+        encoding.writeVarUint(encoder, 0);
+        syncProtocol.writeSyncStep1(encoder, room.doc);
+        ws.send(encoding.toUint8Array(encoder));
+    }
+
+    {
+        // send awareness snapshot
+        const states = room.awareness.getStates();
+        if (states.size > 0) {
+            const encoder = encoding.createEncoder();
+            encoding.writeVarUint(encoder, 1);
+            encoding.writeVarUint8Array(
+                encoder,
+                awarenessProtocol.encodeAwarenessUpdate(room.awareness, Array.from(states.keys()))
+            );
+            ws.send(encoding.toUint8Array(encoder));
+        }
+    }
+
     ws.on("message", (data) => {
-        const text = data.toString();
-        ws.send(text);
-        console.log("ws echoed", text);
+        try {
+            const buf = new Uint8Array(data as Buffer);
+            const decoder = decoding.createDecoder(buf);
+            const encoder = encoding.createEncoder();
+            const messageType = decoding.readVarUint(decoder);
+            switch (messageType) {
+                case 0: {
+                    encoding.writeVarUint(encoder, 0);
+                    syncProtocol.readSyncMessage(decoder, encoder, room.doc, ws);
+
+                    // length > 1 means: more than just type byte we wrote, there is a sync step 2 that replies to sync step 1 from client
+                    if (encoding.length(encoder) > 1) {
+                        ws.send(encoding.toUint8Array(encoder));
+                    }
+                    break;
+                }
+                case 1: {
+                    const update = decoding.readVarUint8Array(decoder);
+                    awarenessProtocol.applyAwarenessUpdate(room.awareness, update, ws);
+                    break;
+                }
+                default:
+                    console.log("unknown message type", { messageType, noteId: ws.ctx.noteId });
+            }
+        } catch (err) {
+            console.log("ws message error", { msg: err instanceof Error ? err.message : String(err), noteId: ws.ctx.noteId });
+            ws.close();
+        }
     });
 
     ws.on("close", (code) => {
-        console.log("ws closed", { code, noteId: ws.ctx?.noteId });
+        removeClient(room, ws);
+        console.log("ws closed", { code, noteId: ws.ctx.noteId });
     });
 
     ws.on("error", (err) => {

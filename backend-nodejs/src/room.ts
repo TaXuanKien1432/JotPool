@@ -46,9 +46,9 @@ export function getOrCreateRoom(noteId: string): Room {
     awareness.on("update", ({ added, updated, removed }: { added: number[], updated: number[], removed: number[] }, origin: unknown) => {
         if (origin && room.clients.has(origin as WSWithCtx)) {
             const ws = origin as WSWithCtx;
-            for (const id of added) ws.ctx!.awarenessIds.add(id);
-            for (const id of updated) ws.ctx!.awarenessIds.add(id);
-            for (const id of removed) ws.ctx!.awarenessIds.delete(id);
+            for (const id of added) ws.ctx.awarenessIds.add(id);
+            for (const id of updated) ws.ctx.awarenessIds.add(id);
+            for (const id of removed) ws.ctx.awarenessIds.delete(id);
         }
         const changed = [...added, ...updated, ...removed]
         const encoder = encoding.createEncoder();
@@ -68,7 +68,7 @@ export function removeClient(room: Room, ws: WSWithCtx) {
     if (!room.clients.has(ws)) return;
     room.clients.delete(ws);
 
-    if (ws.ctx && ws.ctx.awarenessIds.size > 0) {
+    if (ws.ctx.awarenessIds.size > 0) {
         awarenessProtocol.removeAwarenessStates(room.awareness, Array.from(ws.ctx.awarenessIds), null);
     }
 
