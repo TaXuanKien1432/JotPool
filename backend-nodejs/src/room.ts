@@ -74,6 +74,7 @@ export function removeClient(room: Room, ws: WSWithCtx) {
 
     if (room.clients.size === 0) {
         console.log("force-flush stub", { noteId: room.noteId });
+        room.awareness.destroy();
         room.doc.destroy();
         rooms.delete(room.noteId);
     }
