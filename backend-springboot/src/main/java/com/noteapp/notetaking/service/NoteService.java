@@ -61,8 +61,8 @@ public class NoteService {
         if (!isOwner && !isEditor) {
             throw new ForbiddenException("No permission to edit this note");
         }
-        note.setTitle(title);
-        note.setBody(body);
+        if (title != null) note.setTitle(title);
+        if (body != null) note.setBody(body);
         return noteRepository.save(note);
     }
 
