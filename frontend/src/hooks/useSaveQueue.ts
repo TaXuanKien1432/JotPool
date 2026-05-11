@@ -3,8 +3,8 @@ import { apiFetch } from '../services/api'
 import type { Note } from '../pages/Home'
 
 interface PendingChange {
-    title: string;
-    body: string;
+    title?: string;
+    body?: string;
 }
 
 export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[]>>) {
@@ -25,7 +25,7 @@ export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[
         try {
             await apiFetch(`/api/notes/${noteId}`, {
                 method: "PUT",
-                body: { title: changes.title, body: changes.body }
+                body: { title: changes.title, body: changes.body}
             });
             pendingChanges.current.delete(noteId);
         } catch (err) {
@@ -36,13 +36,14 @@ export function useSaveQueue(setNotes: React.Dispatch<React.SetStateAction<Note[
     }, []);
 
     // Queue a change for a note (called on every edit)
-    const queueChange = useCallback((noteId: string, title: string, body: string) => {
+    const queueChange = useCallback((noteId: string, patch: PendingChange) => {
         // 1. Store pending change
-        pendingChanges.current.set(noteId, { title, body });
+        const existing = pendingChanges.current.get(noteId) ?? {};
+        pendingChanges.current.set(noteId, { ...existing, ...patch});
         
         // 2. Update notes state immediately (optimistic UI)
         setNotes(prev => prev.map(note =>
-            note.id === noteId ? { ...note, title, body } : note
+            note.id === noteId ? { ...note, ...patch } : note
         ));
 
         // 3. Clear existing timer for this note
