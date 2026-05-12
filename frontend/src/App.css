@@ -50,3 +50,8 @@
         @apply text-gray-400;
     }
 }
+
+/* Yjs remote selection range highlight */
+.ProseMirror-yjs-selection {
+    opacity: 0.5;
+}
