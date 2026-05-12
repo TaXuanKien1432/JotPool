@@ -33,7 +33,6 @@ const Home:React.FC = () => {
         setNotes={setNotes}
         selectedNote={selectedNote}/>
       <NoteEditor 
-        notes={notes}
         setNotes={setNotes}
         selectedNote={selectedNote}/>
     </div>
