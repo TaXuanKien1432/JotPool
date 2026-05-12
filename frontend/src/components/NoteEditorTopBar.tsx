@@ -8,9 +8,10 @@ interface NoteEditorTopBarProps {
     selectedNote: Note;
     setNotes: React.Dispatch<React.SetStateAction<Note[]>>;
     isSaving?: boolean;
+    status?: "connecting" | "connected" | "disconnected";
 }
 
-const NoteEditorTopBar = ({ selectedNote, setNotes, isSaving }: NoteEditorTopBarProps) => {
+const NoteEditorTopBar = ({ selectedNote, setNotes, isSaving, status }: NoteEditorTopBarProps) => {
     const [showInvitePanel, setShowInvitePanel] = useState(false);
     const inviteRef = useOutsideClick<HTMLDivElement>(showInvitePanel, () => setShowInvitePanel(false));
 
@@ -19,6 +20,20 @@ const NoteEditorTopBar = ({ selectedNote, setNotes, isSaving }: NoteEditorTopBar
             {isSaving !== undefined && (
                 <span className="text-sm text-muted">
                     {isSaving ? "Saving..." : "Saved"}
+                </span>
+            )}
+            {status !== undefined && (
+                <span
+                    className={
+                        "px-2 py-0.5 text-xs font-medium rounded-full " +
+                        (status === "connected"
+                            ? "bg-green-100 text-green-700"
+                            : status === "connecting"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : "bg-red-100 text-red-700")
+                    }
+                >
+                    {status === "connected" ? "Live" : status === "connecting" ? "Connecting…" : "Disconnected"}
                 </span>
             )}
             <div ref={inviteRef} className="relative">

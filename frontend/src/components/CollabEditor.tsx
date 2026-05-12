@@ -72,6 +72,7 @@ import { useEffect, useMemo, useState } from "react";
         <NoteEditorTopBar
           selectedNote={selectedNote}
           setNotes={setNotes}
+          status={status}
         />
         <input
           value={title}
@@ -79,20 +80,7 @@ import { useEffect, useMemo, useState } from "react";
           placeholder="Untitled"
           className="text-2xl font-semibold border-none outline-none mb-4 w-full text-gray-800"
         />
-        <div className="relative flex-1 p-4 min-h-[70vh]">
-          <div
-            className={
-              "absolute top-0 right-0 z-10 px-2 py-0.5 text-xs font-medium rounded-full " +
-              (status === "connected"
-                ? "bg-green-100 text-green-700"
-                : status === "connecting"
-                ? "bg-yellow-100 text-yellow-700"
-                : "bg-red-100 text-red-700")
-            }
-          >
-            {status === "connected" ? "Live" : status === "connecting" ? "Connecting…" :
-  "Disconnected"}
-          </div>
+        <div className="flex-1 p-4 min-h-[70vh]">
           <BlockNoteView editor={editor} />
         </div>
       </div>
