@@ -47,7 +47,7 @@ import { useEffect, useMemo, useState } from "react";
             setNotes(prev => prev.map(n => n.id === selectedNote.id ? { ...n, title: next } : n));
         };
         yTitle.observe(obs);
-        if (yTitle.length > 0) obs(); // catch up only if there's something to catch up to; otherwise keep selectedNote.title fallback
+        if (yTitle.length > 0) obs();
         return () => yTitle.unobserve(obs);
     }, [yTitle, setNotes, selectedNote.id]);
 
