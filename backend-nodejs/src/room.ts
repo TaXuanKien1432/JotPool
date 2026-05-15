@@ -3,6 +3,10 @@ import * as syncProtocol from 'y-protocols/sync.js';
 import * as encoding from 'lib0/encoding.js';
 import * as Y from 'yjs'
 import type { WSWithCtx } from './index.js';
+import { ServerBlockNoteEditor } from '@blocknote/server-util';
+import { loadNote } from './db.js';
+
+const editor = ServerBlockNoteEditor.create();
 
 type Room = {
     noteId: string;
@@ -15,7 +19,7 @@ type Room = {
 
 const rooms = new Map<string, Room>();
 
-export function getOrCreateRoom(noteId: string): Room {
+export async function getOrCreateRoom(noteId: string): Promise<Room> {
     const existing = rooms.get(noteId);
     if (existing) return existing;
 
@@ -29,6 +33,20 @@ export function getOrCreateRoom(noteId: string): Room {
         dirty: false,
         saveTimer: null
     };
+
+    const row = await loadNote(noteId);
+    if (row === null) {
+        throw new Error(`note not found: ${noteId}`);
+    }
+    if (row.yjsDoc !== null) {
+        Y.applyUpdate(doc, new Uint8Array(row.yjsDoc));
+    } else {
+        // private to collab transition
+        const blocks = (row.body as any[]) ?? [];
+        const seedDoc = editor.blocksToYDoc(blocks, "body");
+        Y.applyUpdate(doc, Y.encodeStateAsUpdate(seedDoc));
+        doc.getText("title").insert(0, row.title ?? "");
+    }
 
     // doc update -> broadcast sync update to all clients except the origin
     doc.on("update", (update: Uint8Array, origin) => {

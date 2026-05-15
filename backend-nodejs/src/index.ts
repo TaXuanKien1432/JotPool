@@ -105,10 +105,18 @@ server.on("upgrade", async (req, socket, head) => {
     });
 });
 
-wss.on("connection", (ws: WSWithCtx, req) => {
+wss.on("connection", async (ws: WSWithCtx, req) => {
     console.log("ws connected", { url: req.url, ctx: ws.ctx });
 
-    const room = getOrCreateRoom(ws.ctx.noteId);
+    let room;
+    try {
+        room = await getOrCreateRoom(ws.ctx.noteId);
+    } catch (err) {
+        console.log("room load failed", { noteId: ws.ctx.noteId, err: err instanceof Error ? err.message : err});
+        ws.close(1011, "room load failed");
+        return;
+    }
+    if (ws.readyState !== ws.OPEN) return;
     room.clients.add(ws);
 
     {
