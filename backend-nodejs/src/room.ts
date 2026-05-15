@@ -8,7 +8,7 @@ import { loadNote } from './db.js';
 
 const editor = ServerBlockNoteEditor.create();
 
-type Room = {
+export type Room = {
     noteId: string;
     doc: Y.Doc;
     awareness: awarenessProtocol.Awareness;

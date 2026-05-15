@@ -7,7 +7,7 @@ import * as syncProtocol from 'y-protocols/sync.js'
 import * as awarenessProtocol from 'y-protocols/awareness.js'
 import * as encoding from 'lib0/encoding.js'
 import * as decoding from 'lib0/decoding.js'
-import { getOrCreateRoom, removeClient } from './room.js'
+import { getOrCreateRoom, removeClient, type Room } from './room.js'
 
 const PORT = parseInt(process.env.PORT ?? "8081")
 const JWT_SECRET = process.env.JWT_SECRET ?? ""
@@ -23,6 +23,7 @@ type WsContext = {
     role: string;
     noteId: string;
     awarenessIds: Set<number>;
+    room: Room;
 };
 
 export type WSWithCtx = WebSocket & { ctx: WsContext };
@@ -99,24 +100,23 @@ server.on("upgrade", async (req, socket, head) => {
         return reject(socket, "502 Bad Gateway", `spring unreachable: ${msg}`, noteId);
     }
 
+    // get room
+    let room: Room
+    try {
+        room = await getOrCreateRoom(noteId);
+    } catch (err) {
+        return reject(socket, "500 Internal Server Error", `room load failed: ${err instanceof Error ? err.message : err}`, noteId);
+    }
+
     wss.handleUpgrade(req, socket, head, (ws) => {
-        (ws as WSWithCtx).ctx = { userId, role, noteId, awarenessIds: new Set() };
+        (ws as WSWithCtx).ctx = { userId, role, noteId, awarenessIds: new Set(), room };
         wss.emit("connection", ws, req);
     });
 });
 
 wss.on("connection", async (ws: WSWithCtx, req) => {
     console.log("ws connected", { url: req.url, ctx: ws.ctx });
-
-    let room;
-    try {
-        room = await getOrCreateRoom(ws.ctx.noteId);
-    } catch (err) {
-        console.log("room load failed", { noteId: ws.ctx.noteId, err: err instanceof Error ? err.message : err});
-        ws.close(1011, "room load failed");
-        return;
-    }
-    if (ws.readyState !== ws.OPEN) return;
+    const room = ws.ctx.room;
     room.clients.add(ws);
 
     {
