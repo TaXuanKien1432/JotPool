@@ -4,7 +4,7 @@ import * as encoding from 'lib0/encoding.js';
 import * as Y from 'yjs'
 import type { WSWithCtx } from './index.js';
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
-import { loadNote } from './db.js';
+import { loadNote, saveNoteSnapshot } from './db.js';
 
 const editor = ServerBlockNoteEditor.create();
 
@@ -51,6 +51,12 @@ export async function getOrCreateRoom(noteId: string): Promise<Room> {
     // doc update -> broadcast sync update to all clients except the origin
     doc.on("update", (update: Uint8Array, origin) => {
         room.dirty = true;
+        if (room.saveTimer !== null) {
+            clearTimeout(room.saveTimer);
+        }
+        room.saveTimer = setTimeout(() => {
+            flushRoom(room).catch((err) => console.log("flush error", { noteId: room.noteId, err }));
+        }, 30_000);
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, 0);
         syncProtocol.writeUpdate(encoder, update);
@@ -95,5 +101,23 @@ export function removeClient(room: Room, ws: WSWithCtx) {
         room.awareness.destroy();
         room.doc.destroy();
         rooms.delete(room.noteId);
+    }
+}
+
+async function flushRoom(room: Room): Promise<void> {
+    if (room.saveTimer !== null) {
+        clearTimeout(room.saveTimer);
+        room.saveTimer = null;
+    }
+    room.dirty = false;
+
+    const title = room.doc.getText("title").toString();
+    const body = editor.yDocToBlocks(room.doc, "body");
+    const yjsDoc = Buffer.from(Y.encodeStateAsUpdate(room.doc));
+    try {
+        await saveNoteSnapshot(room.noteId, { title, body, yjsDoc });
+    } catch (err) {
+        room.dirty = true;
+        console.log("save failed", { noteId: room.noteId, err: err instanceof Error ? err.message : err});
     }
 }
