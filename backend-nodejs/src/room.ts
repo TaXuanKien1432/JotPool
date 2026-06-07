@@ -15,6 +15,7 @@ export type Room = {
     clients: Set<WSWithCtx>;
     dirty: boolean;
     saveTimer: NodeJS.Timeout | null;
+    maxWaitTimer: NodeJS.Timeout | null;
 }
 
 const rooms = new Map<string, Room>();
@@ -31,7 +32,8 @@ export async function getOrCreateRoom(noteId: string): Promise<Room> {
         awareness,
         clients: new Set(),
         dirty: false,
-        saveTimer: null
+        saveTimer: null,
+        maxWaitTimer: null
     };
 
     const row = await loadNote(noteId);
@@ -51,12 +53,19 @@ export async function getOrCreateRoom(noteId: string): Promise<Room> {
     // doc update -> broadcast sync update to all clients except the origin
     doc.on("update", (update: Uint8Array, origin) => {
         room.dirty = true;
+        
         if (room.saveTimer !== null) {
             clearTimeout(room.saveTimer);
         }
         room.saveTimer = setTimeout(() => {
             flushRoom(room).catch((err) => console.log("flush error", { noteId: room.noteId, err }));
-        }, 30_000);
+        }, 2_000);
+
+        if (room.maxWaitTimer === null) {
+            room.maxWaitTimer = setTimeout(() => {
+                flushRoom(room).catch((err) => console.log("flush error", { noteId: room.noteId, err }));
+            }, 10_000)
+        }
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, 0);
         syncProtocol.writeUpdate(encoder, update);
@@ -88,7 +97,7 @@ export async function getOrCreateRoom(noteId: string): Promise<Room> {
     return room;
 }
 
-export function removeClient(room: Room, ws: WSWithCtx) {
+export async function removeClient(room: Room, ws: WSWithCtx) {
     if (!room.clients.has(ws)) return;
     room.clients.delete(ws);
 
@@ -97,7 +106,7 @@ export function removeClient(room: Room, ws: WSWithCtx) {
     }
 
     if (room.clients.size === 0) {
-        console.log("force-flush stub", { noteId: room.noteId });
+        if (room.dirty) await flushRoom(room);
         room.awareness.destroy();
         room.doc.destroy();
         rooms.delete(room.noteId);
@@ -108,6 +117,10 @@ async function flushRoom(room: Room): Promise<void> {
     if (room.saveTimer !== null) {
         clearTimeout(room.saveTimer);
         room.saveTimer = null;
+    }
+    if (room.maxWaitTimer !== null) {
+        clearTimeout(room.maxWaitTimer);
+        room.maxWaitTimer = null;
     }
     room.dirty = false;
 

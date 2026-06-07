@@ -173,7 +173,7 @@ wss.on("connection", async (ws: WSWithCtx, req) => {
     });
 
     ws.on("close", (code) => {
-        removeClient(room, ws);
+        removeClient(room, ws).catch((err) => console.log("removeClient error", { noteId: ws.ctx.noteId, err }));
         console.log("ws closed", { code, noteId: ws.ctx.noteId });
     });
 
