@@ -16,6 +16,7 @@ export type Room = {
     dirty: boolean;
     saveTimer: NodeJS.Timeout | null;
     maxWaitTimer: NodeJS.Timeout | null;
+    flushing: boolean;
 }
 
 const rooms = new Map<string, Room>();
@@ -33,7 +34,8 @@ export async function getOrCreateRoom(noteId: string): Promise<Room> {
         clients: new Set(),
         dirty: false,
         saveTimer: null,
-        maxWaitTimer: null
+        maxWaitTimer: null,
+        flushing: false
     };
 
     const row = await loadNote(noteId);
@@ -114,23 +116,35 @@ export async function removeClient(room: Room, ws: WSWithCtx) {
 }
 
 async function flushRoom(room: Room): Promise<void> {
-    if (room.saveTimer !== null) {
-        clearTimeout(room.saveTimer);
-        room.saveTimer = null;
-    }
-    if (room.maxWaitTimer !== null) {
-        clearTimeout(room.maxWaitTimer);
-        room.maxWaitTimer = null;
-    }
-    room.dirty = false;
-
-    const title = room.doc.getText("title").toString();
-    const body = editor.yDocToBlocks(room.doc, "body");
-    const yjsDoc = Buffer.from(Y.encodeStateAsUpdate(room.doc));
+    if (room.flushing) return;
+    room.flushing = true;
     try {
+        if (room.saveTimer !== null) {
+            clearTimeout(room.saveTimer);
+            room.saveTimer = null;
+        }
+        if (room.maxWaitTimer !== null) {
+            clearTimeout(room.maxWaitTimer);
+            room.maxWaitTimer = null;
+        }
+        room.dirty = false;
+
+        const title = room.doc.getText("title").toString();
+        const body = editor.yDocToBlocks(room.doc, "body");
+        const yjsDoc = Buffer.from(Y.encodeStateAsUpdate(room.doc));
         await saveNoteSnapshot(room.noteId, { title, body, yjsDoc });
     } catch (err) {
         room.dirty = true;
         console.log("save failed", { noteId: room.noteId, err: err instanceof Error ? err.message : err});
+    } finally {
+        room.flushing = false;
     }
+}
+
+export async function flushAllDirtyRooms(): Promise<void> {
+    await Promise.all(
+        Array.from(rooms.values())
+        .filter(room => room.dirty)
+        .map(room => flushRoom(room))
+    );
 }

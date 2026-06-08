@@ -7,7 +7,10 @@ import * as syncProtocol from 'y-protocols/sync.js'
 import * as awarenessProtocol from 'y-protocols/awareness.js'
 import * as encoding from 'lib0/encoding.js'
 import * as decoding from 'lib0/decoding.js'
-import { getOrCreateRoom, removeClient, type Room } from './room.js'
+import { flushAllDirtyRooms, getOrCreateRoom, removeClient, type Room } from './room.js'
+import { closePool } from './db.js';
+
+let shuttingDown = false;
 
 const PORT = parseInt(process.env.PORT ?? "8081")
 const JWT_SECRET = process.env.JWT_SECRET ?? ""
@@ -172,8 +175,12 @@ wss.on("connection", async (ws: WSWithCtx, req) => {
         }
     });
 
-    ws.on("close", (code) => {
-        removeClient(room, ws).catch((err) => console.log("removeClient error", { noteId: ws.ctx.noteId, err }));
+    ws.on("close", async (code) => {
+        try {
+            await removeClient(room, ws);
+        } catch (err) {
+            console.log("removeClient error", { noteId: ws.ctx.noteId, err });
+        }
         console.log("ws closed", { code, noteId: ws.ctx.noteId });
     });
 
@@ -183,4 +190,32 @@ wss.on("connection", async (ws: WSWithCtx, req) => {
 });
 
 server.listen(PORT, () => console.log("node ws server listening", PORT))
+
+async function shutdown(signal: string) {
+    if (shuttingDown) process.exit(1);
+    shuttingDown = true;
+    console.log("shutting down", { signal });
+
+    const killTimer = setTimeout(() => {
+        console.log("shutdown timed out, force exit");
+        process.exit(1);
+    }, 5_000);
+    killTimer.unref();
+
+    server.close();
+    wss.close();
+
+    try {
+        await flushAllDirtyRooms();
+        await closePool();
+        console.log("shutdown clean");
+        process.exit(0);
+    } catch (err) {
+        console.log("shutdown error", { err: err instanceof Error ? err.message : err });
+        process.exit(1);
+    }
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
 
