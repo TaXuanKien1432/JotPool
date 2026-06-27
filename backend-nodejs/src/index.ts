@@ -39,6 +39,13 @@ function reject(socket: Duplex, statusLine: string, reason: string, noteId?: str
     console.log("ws rejected", { statusLine, reason, noteId });
 }
 
+function closeWithCode(req: http.IncomingMessage, socket: Duplex, head: Buffer, code: number, reason: string, noteId?: string) {
+    wss.handleUpgrade(req, socket, head, (ws) => {
+        ws.close(code, reason);
+        console.log("ws closed with code", { code, reason, noteId });
+    })
+}
+
 const server = http.createServer((req, res) => {
     if (req.url === "/health") {
         res.writeHead(200).end("ok");
@@ -66,7 +73,7 @@ server.on("upgrade", async (req, socket, head) => {
     // extract jwt token
     const token = url.searchParams.get("token");
     if (!token) {
-        return reject(socket, "401 Unauthorized", "no token", noteId);
+        return closeWithCode(req, socket, head, 4401, "missing token", noteId);
     }
 
     // verify jwt and extract userId
@@ -74,11 +81,11 @@ server.on("upgrade", async (req, socket, head) => {
     try {
         const payload = jwt.verify(token, JWT_SECRET, { algorithms: ["HS256"]});
         if (typeof payload === "string" || !payload.sub) {
-            return reject(socket, "401 Unauthorized", "bad payload", noteId);
+            return closeWithCode(req, socket, head, 4401, "invalid token payload", noteId);
         }
         userId = payload.sub;
     } catch {
-        return reject(socket, "401 Unauthorized", "jwt verify failed", noteId);
+        return closeWithCode(req, socket, head, 4401, "jwt verify failed", noteId);
     }
 
     // call spring boot to get role
@@ -95,7 +102,7 @@ server.on("upgrade", async (req, socket, head) => {
         }
         const data = await resp.json() as { role?: string };
         if (!data.role || data.role === "NONE") {
-            return reject(socket, "403 Forbidden", "no access", noteId);
+            return closeWithCode(req, socket, head, 4403, "access denied", noteId);
         }
         role = data.role;
     } catch (err) {
